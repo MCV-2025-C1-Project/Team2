@@ -1,4 +1,5 @@
 import numpy as np 
+from scipy.stats import wasserstein_distance
 from similarity_measures import *
 
 
