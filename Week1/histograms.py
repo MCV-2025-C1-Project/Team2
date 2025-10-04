@@ -185,6 +185,107 @@ class YCbCr_Concat_Histogram:
         plt.grid(True)
         plt.show()
 
+class XYZ_Concat_Histogram:
+    """Stores concatenated XYZ histograms"""
+    range = 256
+
+    def __init__(self, height, width):
+        self.pixelNumber = width * height
+        self.x = [0] * XYZ_Concat_Histogram.range
+        self.y = [0] * XYZ_Concat_Histogram.range
+        self.z = [0] * XYZ_Concat_Histogram.range
+        self.concat = [0] * (3 * XYZ_Concat_Histogram.range)
+        self.normalized = [0] * (3 * XYZ_Concat_Histogram.range)
+
+    def setHist(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
+
+    def calculate_concat_hist(self):
+        self.concat = np.concatenate([self.x, self.y, self.z])
+
+    def normalize(self):
+        self.normalized = np.array(self.concat) / self.pixelNumber
+
+    def show(self):
+        plt.figure(figsize=(10, 5))
+        x = range(len(self.concat))
+        plt.plot(x, self.concat, color='black', label='XYZ Concat Histogram')
+        plt.title('Concatenated XYZ Histogram')
+        plt.xlabel('Bin')
+        plt.ylabel('Frequency')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+        
+class HLS_Concat_Histogram:
+    """Stores concatenated HLS histograms"""
+    range = 256
+
+    def __init__(self, height, width):
+        self.pixelNumber = width * height
+        self.h = [0] * HLS_Concat_Histogram.range
+        self.l = [0] * HLS_Concat_Histogram.range
+        self.s = [0] * HLS_Concat_Histogram.range
+        self.concat = [0] * (3 * HLS_Concat_Histogram.range)
+        self.normalized = [0] * (3 * HLS_Concat_Histogram.range)
+
+    def setHist(self, h, l, s):
+        self.h = h
+        self.l = l
+        self.s = s
+
+    def calculate_concat_hist(self):
+        self.concat = np.concatenate([self.h, self.l, self.s])
+
+    def normalize(self):
+        self.normalized = np.array(self.concat) / self.pixelNumber
+
+    def show(self):
+        plt.figure(figsize=(10, 5))
+        x = range(len(self.concat))
+        plt.plot(x, self.concat, color='black', label='HLS Concat Histogram')
+        plt.title('Concatenated HLS Histogram')
+        plt.xlabel('Bin')
+        plt.ylabel('Frequency')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+        
+class YUV_Concat_Histogram:
+    """Stores concatenated YUV histograms"""
+    range = 256
+
+    def __init__(self, height, width):
+        self.pixelNumber = width * height
+        self.y = [0] * YUV_Concat_Histogram.range
+        self.u = [0] * YUV_Concat_Histogram.range
+        self.v = [0] * YUV_Concat_Histogram.range
+        self.concat = [0] * (3 * YUV_Concat_Histogram.range)
+        self.normalized = [0] * (3 * YUV_Concat_Histogram.range)
+
+    def setHist(self, y, u, v):
+        self.y = y
+        self.u = u
+        self.v = v
+
+    def calculate_concat_hist(self):
+        self.concat = np.concatenate([self.y, self.u, self.v])
+
+    def normalize(self):
+        self.normalized = np.array(self.concat) / self.pixelNumber
+
+    def show(self):
+        plt.figure(figsize=(10, 5))
+        x = range(len(self.concat))
+        plt.plot(x, self.concat, color='black', label='YUV Concat Histogram')
+        plt.title('Concatenated YUV Histogram')
+        plt.xlabel('Bin')
+        plt.ylabel('Frequency')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
 
 class Gray_Histogram:
     """Class that stores and operates the gray histogram"""
