@@ -3,3 +3,4 @@ torchvision
 tqdm
 Pillow
 opencv-python
+scipy
