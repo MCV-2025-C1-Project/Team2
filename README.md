@@ -1,6 +1,6 @@
-# C1. Introduction to Human and Computer Vision - Project
+# C2. Optimisation techniques for Computer Vision - Project
 
-This repository contains Team2's work for the **C1 course** in the **Master in Computer Vision (MCV 2025-2026)**.
+This repository contains Team2's work for the **C2 course** in the **Master in Computer Vision (MCV 2025-2026)**.
 
 
 ## Team members:
