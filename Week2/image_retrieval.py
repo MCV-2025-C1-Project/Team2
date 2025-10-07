@@ -25,7 +25,7 @@ from helper_functions_main import pil_to_cv2, create_histogram_with_bins
 from mapk import mapk
 
 
-def load_ground_truth(gt_path="../qsd1_w1/gt_corresps.pkl"):
+def load_ground_truth(gt_path="../Data/Week1/qsd1_w1/gt_corresps.pkl"):
     """Load ground truth correspondences"""
     if os.path.exists(gt_path):
         with open(gt_path, "rb") as f:
@@ -40,7 +40,7 @@ class ImageRetrieval:
     Image Retrieval System using optimized methods from Week 1
     """
     
-    def __init__(self, database_path="../BBDD/", cache_path="cache/"):
+    def __init__(self, database_path="../Data/BBDD/", cache_path="cache/"):
         """
         Initialize the Image Retrieval System
         
@@ -187,6 +187,7 @@ class ImageRetrieval:
             hls_hist.calculate_concat_hist()
             hls_hist.normalize()
             hls_histograms.append(copy.copy(hls_hist))
+
         
         self.database_histograms = {
             'HSV': hsv_histograms,
@@ -337,8 +338,8 @@ class ImageRetrieval:
             "bins": config["bins"],
             "similarity_measures": ["L1", "Histogram Intersection", "KL Divergence"]  # Based on indices used
         }
-    
-    def evaluate_on_qsd1(self, query_path="../qsd1_w1/", gt_path="../qsd1_w1/gt_corresps.pkl", k_values=[1, 5]):
+
+    def evaluate_on_qsd1(self, query_path="../Data/Week1/qsd1_w1/", gt_path="../Data/Week1/qsd1_w1/gt_corresps.pkl", k_values=[1, 5]):
         """
         Evaluate both methods on qsd1_w1 dataset and calculate MAP scores
         
@@ -425,7 +426,7 @@ def main():
     retriever = ImageRetrieval()
     
     # Example query (you would replace this with actual query image path)
-    query_path = "../qst1_w1/00001.jpg"  # Example path
+    query_path = "../Data/Week1/qst1_w1/00001.jpg"  # Example path
     
     if os.path.exists(query_path):
         # Retrieve using method1
