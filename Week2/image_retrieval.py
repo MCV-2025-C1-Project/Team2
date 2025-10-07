@@ -158,6 +158,7 @@ class ImageRetrieval:
         hsv_histograms = []
         lab_histograms = []
         hls_histograms = []
+        pyramid_histograms, hs2d_histograms, block_histograms = [], [], []
         
         for img_name in tqdm(self.database_images, desc="Computing histograms"):
             img_path = os.path.join(self.database_path, img_name)
@@ -212,11 +213,25 @@ class ImageRetrieval:
             hls_hist.normalize()
             hls_histograms.append(copy.copy(hls_hist))
 
+            # 3D RGB Spatial Pyramid
+            pyramid_histograms.append(
+                SpatialPyramidHistogram(bins=(8, 8, 8), levels=3, color_space="RGB").compute(img_cv)
+            )
+
+            # 2D HS Histogram
+            hs2d_histograms.append(Histogram2D(bins=(32, 32), color_space="HSV").compute(img_cv))
+
+            # 3D RGB Block Histogram
+            block_histograms.append(BlockHistogram(bins=(8, 8, 8), grid=(2, 2), color_space="RGB").compute(img_cv))
+
         
         self.database_histograms = {
             'HSV': hsv_histograms,
             'CIELAB': lab_histograms,
-            'HLS': hls_histograms
+            'HLS': hls_histograms,
+            "3D_RGB_PYRAMID": pyramid_histograms,
+            "2D_HS": hs2d_histograms,
+            "3D_RGB_BLOCK": block_histograms,
         }
     
     def _compute_query_histogram(self, image_path, descriptor_type):
@@ -261,6 +276,14 @@ class ImageRetrieval:
             hist_obj.h_hist = h_hist
             hist_obj.l_hist = l_hist
             hist_obj.s_hist = s_hist
+        elif descriptor_type == "3D_RGB_PYRAMID":
+            return SpatialPyramidHistogram(bins=(8, 8, 8), levels=3, color_space="RGB").compute(img_cv)
+
+        elif descriptor_type == "2D_HS":
+            return Histogram2D(bins=(32, 32), color_space="HSV").compute(img_cv)
+
+        elif descriptor_type == "3D_RGB_BLOCK":
+            return BlockHistogram(bins=(8, 8, 8), grid=(2, 2), color_space="RGB").compute(img_cv)
         
         hist_obj.calculate_concat_hist()
         hist_obj.normalize()
