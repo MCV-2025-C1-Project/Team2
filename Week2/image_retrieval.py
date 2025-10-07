@@ -15,6 +15,8 @@ import copy
 from tqdm import tqdm
 
 from histograms import HSV_Concat_Histogram, CIELAB_Concat_Histogram, HLS_Concat_Histogram
+from advanced_histograms import Histogram2D, Histogram3D, BlockHistogram, SpatialPyramidHistogram
+
 from similarity_measures_optimized import (
     euclidean_distance_matrix, l1_distance_matrix, x2_distance_matrix,
     histogram_intersection_matrix, hellinger_kernel_matrix, cosine_similarity_matrix,
@@ -69,6 +71,28 @@ class ImageRetrieval:
             "similarity_indices": [1, 3, 8]   
         }
 
+        self.method3_config = {  # 3D RGB spatial pyramid
+            "descriptors": ["3D_RGB_PYRAMID"],
+            "weights1": [1.0],
+            "weights2": [0.0],
+            "bins": 8,
+            "similarity_indices": [1],
+        }
+        
+        self.method4_config = {  # 2D HS histogram
+            "descriptors": ["2D_HS"],
+            "weights1": [1.0],
+            "weights2": [0.0],
+            "bins": 32,
+            "similarity_indices": [1],
+        }
+        self.method5_config = {  # Block-based 3D RGB histogram
+            "descriptors": ["3D_RGB_BLOCK"],
+            "weights1": [1.0],
+            "weights2": [0.0],
+            "bins": 8,
+            "similarity_indices": [1],
+        }
         
         # Similarity functions
         self.similarity_functions = [
