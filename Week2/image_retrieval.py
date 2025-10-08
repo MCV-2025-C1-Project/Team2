@@ -15,7 +15,7 @@ import copy
 from tqdm import tqdm
 
 from histograms import HSV_Concat_Histogram, CIELAB_Concat_Histogram, HLS_Concat_Histogram
-from advanced_histograms import Histogram2D, Histogram3D, BlockHistogram, SpatialPyramidHistogram
+from week2_histograms import Histogram2D, Histogram3D, BlockHistogram, SpatialPyramidHistogram
 
 from similarity_measures_optimized import (
     euclidean_distance_matrix, l1_distance_matrix, x2_distance_matrix,
@@ -27,7 +27,7 @@ from helper_functions_main import pil_to_cv2, create_histogram_with_bins
 from mapk import mapk
 
 
-def load_ground_truth(gt_path="../Data/Week1/qsd1_w1/gt_corresps.pkl"):
+def load_ground_truth(gt_path="Data/Week1/qsd1_w1/gt_corresps.pkl"):
     """Load ground truth correspondences"""
     if os.path.exists(gt_path):
         with open(gt_path, "rb") as f:
@@ -41,34 +41,27 @@ class ImageRetrieval:
     """
     Image Retrieval System using optimized methods from Week 1
     """
-    
-    def __init__(self, database_path="../Data/BBDD/", cache_path="cache/"):
-        """
-        Initialize the Image Retrieval System
-        
-        Args:
-            database_path (str): Path to the BBDD database folder
-            cache_path (str): Path to cache folder for storing computed histograms
-        """
+
+    def __init__(self, database_path="Data/BBDD/", cache_path="cache/"):
         self.database_path = database_path
         self.cache_path = cache_path
         os.makedirs(cache_path, exist_ok=True)
-        
+
         # Hardcoded best methods from Week 1
         self.method1_config = {
-            "descriptors": ["CIELAB", "HLS"],  # CIELAB Concat + HLS Concat
-            "weights1": [0.0, 0.0, 0.5],       # [L1, Hist Int, KL Divergence]
-            "weights2": [1.0, 0.5, 0.0],      
+            "descriptors": ["CIELAB", "HLS"],  # dual descriptor
+            "weights1": [0.0, 0.0, 0.5],
+            "weights2": [1.0, 0.5, 0.0],
             "bins": 256,
-            "similarity_indices": [1, 3, 8]   
+            "similarity_indices": [1, 3, 8]
         }
-        
+
         self.method2_config = {
-            "descriptors": ["CIELAB", "HSV"],  # CIELAB Concat + HSV Concat
-            "weights1": [1.0, 0.5, 0.0],      
-            "weights2": [0.0, 0.0, 0.5],      
+            "descriptors": ["CIELAB", "HSV"],
+            "weights1": [1.0, 0.5, 0.0],
+            "weights2": [0.0, 0.0, 0.5],
             "bins": 256,
-            "similarity_indices": [1, 3, 8]   
+            "similarity_indices": [1, 3, 8]
         }
 
         self.method3_config = {  # 3D RGB spatial pyramid
@@ -76,523 +69,291 @@ class ImageRetrieval:
             "weights1": [1.0],
             "weights2": [0.0],
             "bins": 8,
-            "similarity_indices": [1],
+            "similarity_indices": [1]
         }
-        
+
         self.method4_config = {  # 2D HS histogram
             "descriptors": ["2D_HS"],
             "weights1": [1.0],
             "weights2": [0.0],
             "bins": 32,
-            "similarity_indices": [1],
+            "similarity_indices": [1]
         }
+
         self.method5_config = {  # Block-based 3D RGB histogram
             "descriptors": ["3D_RGB_BLOCK"],
             "weights1": [1.0],
             "weights2": [0.0],
             "bins": 8,
-            "similarity_indices": [1],
+            "similarity_indices": [1]
         }
-        
+
         # Similarity functions
         self.similarity_functions = [
-            euclidean_distance_matrix,    # 0
-            l1_distance_matrix,          # 1
-            x2_distance_matrix,          # 2
-            histogram_intersection_matrix, # 3
-            hellinger_kernel_matrix,     # 4
-            cosine_similarity_matrix,    # 5
-            bhattacharyya_distance_matrix, # 6
-            correlation_matrix,          # 7
-            kl_divergence_matrix         # 8
+            euclidean_distance_matrix,  # 0
+            l1_distance_matrix,         # 1
+            x2_distance_matrix,         # 2
+            histogram_intersection_matrix,  # 3
+            hellinger_kernel_matrix,    # 4
+            cosine_similarity_matrix,   # 5
+            bhattacharyya_distance_matrix,  # 6
+            correlation_matrix,         # 7
+            kl_divergence_matrix        # 8
         ]
-        
+
         # Initialize database
         self.database_images = []
         self.database_histograms = {}
         self._load_database()
-    
+
     def _load_database(self):
         """Load database images and compute/load histograms"""
         print("Loading database...")
-        
-        # Get all jpg images from database
-        self.database_images = [f for f in os.listdir(self.database_path) if f.endswith('.jpg')]
-        self.database_images.sort()
-        
+        self.database_images = sorted([f for f in os.listdir(self.database_path) if f.endswith('.jpg')])
         print(f"Found {len(self.database_images)} images in database")
-        
-        # Try to load cached histograms
+
         cache_file = os.path.join(self.cache_path, "database_histograms.pkl")
         if os.path.exists(cache_file):
             try:
                 with open(cache_file, "rb") as f:
-                    cached_data = pickle.load(f)
-                
-                # Validate cache
-                if cached_data.get('image_list') == self.database_images:
-                    self.database_histograms = cached_data['histograms']
+                    cached = pickle.load(f)
+                if cached.get("image_list") == self.database_images:
+                    self.database_histograms = cached["histograms"]
                     print("Loaded histograms from cache")
                     return
                 else:
-                    print("Cache outdated, recomputing histograms...")
+                    print("Cache outdated, recomputing...")
             except Exception as e:
-                print(f"Failed to load cache: {e}")
-        
-        # Compute histograms
+                print(f"Cache load failed: {e}")
+
         self._compute_database_histograms()
-        
-        # Save to cache
-        cache_data = {
-            'image_list': self.database_images,
-            'histograms': self.database_histograms
-        }
         with open(cache_file, "wb") as f:
-            pickle.dump(cache_data, f)
+            pickle.dump({"image_list": self.database_images, "histograms": self.database_histograms}, f)
         print("Saved histograms to cache")
-    
+
     def _compute_database_histograms(self):
         """Compute histograms for all database images"""
         print("Computing histograms for database images...")
-        
-        hsv_histograms = []
-        lab_histograms = []
-        hls_histograms = []
+
+        hsv_histograms, lab_histograms, hls_histograms = [], [], []
         pyramid_histograms, hs2d_histograms, block_histograms = [], [], []
-        
+
         for img_name in tqdm(self.database_images, desc="Computing histograms"):
             img_path = os.path.join(self.database_path, img_name)
-            
-            # Load and convert image
             img_pil = Image.open(img_path)
             img_cv = pil_to_cv2(img_pil)
-            height, width = img_cv.shape[:2]
-            
-            # HSV Histogram
-            hsv_hist = HSV_Concat_Histogram(height, width)
+            h, w = img_cv.shape[:2]
+
+            # HSV
+            hsv_hist = HSV_Concat_Histogram(h, w)
             img_hsv = cv2.cvtColor(img_cv, cv2.COLOR_BGR2HSV)
-            h_hist = np.bincount(img_hsv[:,:,0].flatten(), minlength=256)
-            s_hist = np.bincount(img_hsv[:,:,1].flatten(), minlength=256)
-            v_hist = np.bincount(img_hsv[:,:,2].flatten(), minlength=256)
+            h_hist = np.bincount(img_hsv[:, :, 0].flatten(), minlength=256)
+            s_hist = np.bincount(img_hsv[:, :, 1].flatten(), minlength=256)
+            v_hist = np.bincount(img_hsv[:, :, 2].flatten(), minlength=256)
             hsv_hist.setHist(h_hist, s_hist, v_hist)
-            # Set attributes for create_histogram_with_bins compatibility
-            hsv_hist.h_hist = h_hist
-            hsv_hist.s_hist = s_hist
-            hsv_hist.v_hist = v_hist
+            hsv_hist.h_hist, hsv_hist.s_hist, hsv_hist.v_hist = h_hist, s_hist, v_hist
             hsv_hist.calculate_concat_hist()
             hsv_hist.normalize()
             hsv_histograms.append(copy.copy(hsv_hist))
-            
-            # CIELAB Histogram
-            lab_hist = CIELAB_Concat_Histogram(height, width)
+
+            # CIELAB
+            lab_hist = CIELAB_Concat_Histogram(h, w)
             img_lab = cv2.cvtColor(img_cv, cv2.COLOR_BGR2LAB)
-            l_hist = np.bincount(img_lab[:,:,0].flatten(), minlength=256)
-            a_hist = np.bincount(img_lab[:,:,1].flatten(), minlength=256)
-            b_hist = np.bincount(img_lab[:,:,2].flatten(), minlength=256)
+            l_hist = np.bincount(img_lab[:, :, 0].flatten(), minlength=256)
+            a_hist = np.bincount(img_lab[:, :, 1].flatten(), minlength=256)
+            b_hist = np.bincount(img_lab[:, :, 2].flatten(), minlength=256)
             lab_hist.setHist(l_hist, a_hist, b_hist)
-            # Set attributes for create_histogram_with_bins compatibility
-            lab_hist.l_hist = l_hist
-            lab_hist.a_hist = a_hist
-            lab_hist.b_hist = b_hist
+            lab_hist.l_hist, lab_hist.a_hist, lab_hist.b_hist = l_hist, a_hist, b_hist
             lab_hist.calculate_concat_hist()
             lab_hist.normalize()
             lab_histograms.append(copy.copy(lab_hist))
-            
-            # HLS Histogram
-            hls_hist = HLS_Concat_Histogram(height, width)
+
+            # HLS
+            hls_hist = HLS_Concat_Histogram(h, w)
             img_hls = cv2.cvtColor(img_cv, cv2.COLOR_BGR2HLS)
-            h_hist = np.bincount(img_hls[:,:,0].flatten(), minlength=256)
-            l_hist = np.bincount(img_hls[:,:,1].flatten(), minlength=256)
-            s_hist = np.bincount(img_hls[:,:,2].flatten(), minlength=256)
+            h_hist = np.bincount(img_hls[:, :, 0].flatten(), minlength=256)
+            l_hist = np.bincount(img_hls[:, :, 1].flatten(), minlength=256)
+            s_hist = np.bincount(img_hls[:, :, 2].flatten(), minlength=256)
             hls_hist.setHist(h_hist, l_hist, s_hist)
-            # Set attributes for create_histogram_with_bins compatibility
-            hls_hist.h_hist = h_hist
-            hls_hist.l_hist = l_hist
-            hls_hist.s_hist = s_hist
+            hls_hist.h_hist, hls_hist.l_hist, hls_hist.s_hist = h_hist, l_hist, s_hist
             hls_hist.calculate_concat_hist()
             hls_hist.normalize()
             hls_histograms.append(copy.copy(hls_hist))
 
-            # 3D RGB Spatial Pyramid
-            pyramid_histograms.append(
-                SpatialPyramidHistogram(bins=(8, 8, 8), levels=3, color_space="RGB").compute(img_cv)
-            )
+            # Week 2 descriptors
+            pyramid_histograms.append(SpatialPyramidHistogram((8, 8, 8), 3, "RGB").compute(img_cv))
+            hs2d_histograms.append(Histogram2D((32, 32), "HSV").compute(img_cv))
+            block_histograms.append(BlockHistogram((8, 8, 8), (2, 2), "RGB").compute(img_cv))
 
-            # 2D HS Histogram
-            hs2d_histograms.append(Histogram2D(bins=(32, 32), color_space="HSV").compute(img_cv))
-
-            # 3D RGB Block Histogram
-            block_histograms.append(BlockHistogram(bins=(8, 8, 8), grid=(2, 2), color_space="RGB").compute(img_cv))
-
-        
         self.database_histograms = {
-            'HSV': hsv_histograms,
-            'CIELAB': lab_histograms,
-            'HLS': hls_histograms,
+            "HSV": hsv_histograms,
+            "CIELAB": lab_histograms,
+            "HLS": hls_histograms,
             "3D_RGB_PYRAMID": pyramid_histograms,
             "2D_HS": hs2d_histograms,
             "3D_RGB_BLOCK": block_histograms,
         }
-    
+
     def _compute_query_histogram(self, image_path, descriptor_type):
         """Compute histogram for a query image"""
-        # Load and convert image
         img_pil = Image.open(image_path)
         img_cv = pil_to_cv2(img_pil)
-        height, width = img_cv.shape[:2]
-        
+        h, w = img_cv.shape[:2]
+
         if descriptor_type == "HSV":
-            hist_obj = HSV_Concat_Histogram(height, width)
-            img_converted = cv2.cvtColor(img_cv, cv2.COLOR_BGR2HSV)
-            h_hist = np.bincount(img_converted[:,:,0].flatten(), minlength=256)
-            s_hist = np.bincount(img_converted[:,:,1].flatten(), minlength=256)
-            v_hist = np.bincount(img_converted[:,:,2].flatten(), minlength=256)
-            hist_obj.setHist(h_hist, s_hist, v_hist)
-            # Set attributes for create_histogram_with_bins compatibility
-            hist_obj.h_hist = h_hist
-            hist_obj.s_hist = s_hist
-            hist_obj.v_hist = v_hist
-            
+            hist = HSV_Concat_Histogram(h, w)
+            img_conv = cv2.cvtColor(img_cv, cv2.COLOR_BGR2HSV)
+            h_hist = np.bincount(img_conv[:, :, 0].flatten(), minlength=256)
+            s_hist = np.bincount(img_conv[:, :, 1].flatten(), minlength=256)
+            v_hist = np.bincount(img_conv[:, :, 2].flatten(), minlength=256)
+            hist.setHist(h_hist, s_hist, v_hist)
+            hist.h_hist, hist.s_hist, hist.v_hist = h_hist, s_hist, v_hist
+
         elif descriptor_type == "CIELAB":
-            hist_obj = CIELAB_Concat_Histogram(height, width)
-            img_converted = cv2.cvtColor(img_cv, cv2.COLOR_BGR2LAB)
-            l_hist = np.bincount(img_converted[:,:,0].flatten(), minlength=256)
-            a_hist = np.bincount(img_converted[:,:,1].flatten(), minlength=256)
-            b_hist = np.bincount(img_converted[:,:,2].flatten(), minlength=256)
-            hist_obj.setHist(l_hist, a_hist, b_hist)
-            # Set attributes for create_histogram_with_bins compatibility
-            hist_obj.l_hist = l_hist
-            hist_obj.a_hist = a_hist
-            hist_obj.b_hist = b_hist
-            
+            hist = CIELAB_Concat_Histogram(h, w)
+            img_conv = cv2.cvtColor(img_cv, cv2.COLOR_BGR2LAB)
+            l_hist = np.bincount(img_conv[:, :, 0].flatten(), minlength=256)
+            a_hist = np.bincount(img_conv[:, :, 1].flatten(), minlength=256)
+            b_hist = np.bincount(img_conv[:, :, 2].flatten(), minlength=256)
+            hist.setHist(l_hist, a_hist, b_hist)
+            hist.l_hist, hist.a_hist, hist.b_hist = l_hist, a_hist, b_hist
+
         elif descriptor_type == "HLS":
-            hist_obj = HLS_Concat_Histogram(height, width)
-            img_converted = cv2.cvtColor(img_cv, cv2.COLOR_BGR2HLS)
-            h_hist = np.bincount(img_converted[:,:,0].flatten(), minlength=256)
-            l_hist = np.bincount(img_converted[:,:,1].flatten(), minlength=256)
-            s_hist = np.bincount(img_converted[:,:,2].flatten(), minlength=256)
-            hist_obj.setHist(h_hist, l_hist, s_hist)
-            # Set attributes for create_histogram_with_bins compatibility
-            hist_obj.h_hist = h_hist
-            hist_obj.l_hist = l_hist
-            hist_obj.s_hist = s_hist
+            hist = HLS_Concat_Histogram(h, w)
+            img_conv = cv2.cvtColor(img_cv, cv2.COLOR_BGR2HLS)
+            h_hist = np.bincount(img_conv[:, :, 0].flatten(), minlength=256)
+            l_hist = np.bincount(img_conv[:, :, 1].flatten(), minlength=256)
+            s_hist = np.bincount(img_conv[:, :, 2].flatten(), minlength=256)
+            hist.setHist(h_hist, l_hist, s_hist)
+            hist.h_hist, hist.l_hist, hist.s_hist = h_hist, l_hist, s_hist
+
         elif descriptor_type == "3D_RGB_PYRAMID":
-            return SpatialPyramidHistogram(bins=(8, 8, 8), levels=3, color_space="RGB").compute(img_cv)
+            return SpatialPyramidHistogram((8, 8, 8), 3, "RGB").compute(img_cv)
 
         elif descriptor_type == "2D_HS":
-            return Histogram2D(bins=(32, 32), color_space="HSV").compute(img_cv)
+            return Histogram2D((32, 32), "HSV").compute(img_cv)
 
         elif descriptor_type == "3D_RGB_BLOCK":
-            return BlockHistogram(bins=(8, 8, 8), grid=(2, 2), color_space="RGB").compute(img_cv)
-        
-        hist_obj.calculate_concat_hist()
-        hist_obj.normalize()
-        return hist_obj
-    
+            return BlockHistogram((8, 8, 8), (2, 2), "RGB").compute(img_cv)
+
+        hist.calculate_concat_hist()
+        hist.normalize()
+        return hist
+
+    def _prepare_for_similarity(self, query_hist, desc_type, bins):
+        """Convert query and database histograms to normalized arrays"""
+        if isinstance(query_hist, np.ndarray):
+            Query = np.array([normalize_hist(query_hist)])
+            DB = np.array([normalize_hist(h) for h in self.database_histograms[desc_type]])
+        else:
+            query_bins = create_histogram_with_bins(query_hist, bins)
+            db_hist = [create_histogram_with_bins(h, bins) for h in self.database_histograms[desc_type]]
+            Query = np.array([normalize_hist(query_bins)])
+            DB = np.array([normalize_hist(h) for h in db_hist])
+        return Query, DB
+
     def _retrieve_with_method(self, query_image_path, method_config, k=10):
-        """Retrieve similar images using a specific method"""
-        desc1_type, desc2_type = method_config["descriptors"]
-        weights1 = np.array(method_config["weights1"])
-        weights2 = np.array(method_config["weights2"])
+        descriptors = method_config["descriptors"]
         bins = method_config["bins"]
         sim_indices = method_config["similarity_indices"]
-        
-        # Compute query histograms
-        query_hist1 = self._compute_query_histogram(query_image_path, desc1_type)
-        query_hist2 = self._compute_query_histogram(query_image_path, desc2_type)
-        
-        # Apply bin reduction if needed
-        query_bins1 = create_histogram_with_bins(query_hist1, bins)
-        query_bins2 = create_histogram_with_bins(query_hist2, bins)
-        
-        # Get database histograms and apply bin reduction
-        db_hist1 = [create_histogram_with_bins(h, bins) for h in self.database_histograms[desc1_type]]
-        db_hist2 = [create_histogram_with_bins(h, bins) for h in self.database_histograms[desc2_type]]
-        
-        # Normalize
-        Query1 = np.array([normalize_hist(query_bins1)])
-        Query2 = np.array([normalize_hist(query_bins2)])
-        DB1 = np.array([normalize_hist(h) for h in db_hist1])
-        DB2 = np.array([normalize_hist(h) for h in db_hist2])
-        
-        # Compute similarity scores
-        scores1 = np.stack([self.similarity_functions[i](Query1, DB1) for i in sim_indices], axis=-1)
-        scores2 = np.stack([self.similarity_functions[i](Query2, DB2) for i in sim_indices], axis=-1)
-        
-        # Apply sign correction for similarity measures (intersection, hellinger, cosine, correlation)
-        for i, sim_idx in enumerate(sim_indices):
-            func = self.similarity_functions[sim_idx]
-            if func.__name__ in ['histogram_intersection_matrix', 'hellinger_kernel_matrix', 
-                                'cosine_similarity_matrix', 'correlation_matrix']:
-                scores1[0, :, i] = -scores1[0, :, i]
-                scores2[0, :, i] = -scores2[0, :, i]
-        
-        # Apply weights and combine
-        weighted1 = np.dot(scores1[0], weights1)
-        weighted2 = np.dot(scores2[0], weights2)
-        combined = (weighted1 + weighted2) / 2.0
-        
-        # Get top k indices
-        top_k_indices = np.argsort(combined)[:k]
-        
-        # Return image filenames (no scores needed)
-        results = []
-        for idx in top_k_indices:
-            results.append(self.database_images[idx])
-        
-        return results
-    
+
+        if len(descriptors) == 2:
+            desc1, desc2 = descriptors
+            w1, w2 = np.array(method_config["weights1"]), np.array(method_config["weights2"])
+
+            qh1 = self._compute_query_histogram(query_image_path, desc1)
+            qh2 = self._compute_query_histogram(query_image_path, desc2)
+            Q1, DB1 = self._prepare_for_similarity(qh1, desc1, bins)
+            Q2, DB2 = self._prepare_for_similarity(qh2, desc2, bins)
+
+            s1 = np.stack([self.similarity_functions[i](Q1, DB1) for i in sim_indices], axis=-1)
+            s2 = np.stack([self.similarity_functions[i](Q2, DB2) for i in sim_indices], axis=-1)
+
+            for i, si in enumerate(sim_indices):
+                func = self.similarity_functions[si]
+                if func.__name__ in ['histogram_intersection_matrix', 'hellinger_kernel_matrix',
+                                     'cosine_similarity_matrix', 'correlation_matrix']:
+                    s1[0, :, i] = -s1[0, :, i]
+                    s2[0, :, i] = -s2[0, :, i]
+
+            combined = (np.dot(s1[0], w1) + np.dot(s2[0], w2)) / 2.0
+        else:
+            desc = descriptors[0]
+            w1 = np.array(method_config["weights1"])
+            qh = self._compute_query_histogram(query_image_path, desc)
+            Q, DB = self._prepare_for_similarity(qh, desc, bins)
+            s = np.stack([self.similarity_functions[i](Q, DB) for i in sim_indices], axis=-1)
+            for i, si in enumerate(sim_indices):
+                func = self.similarity_functions[si]
+                if func.__name__ in ['histogram_intersection_matrix', 'hellinger_kernel_matrix',
+                                     'cosine_similarity_matrix', 'correlation_matrix']:
+                    s[0, :, i] = -s[0, :, i]
+            combined = np.dot(s[0], w1)
+
+        top_k = np.argsort(combined)[:k]
+        return [self.database_images[idx] for idx in top_k]
+
     def retrieve_similar_images(self, query_image_path, method="method1", k=10):
-        """
-        Retrieve top-k similar images from the database
-        
-        Args:
-            query_image_path (str): Path to the query image
-            method (str): Method to use ("method1" or "method2")
-            k (int): Number of similar images to retrieve (default: 10)
-            
-        Returns:
-            list: List of image filenames, ordered by similarity (most similar first)
-        """
         if not os.path.exists(query_image_path):
             raise FileNotFoundError(f"Query image not found: {query_image_path}")
-        
-        if method == "method1":
-            config = self.method1_config
-        elif method == "method2":
-            config = self.method2_config
-        elif method == "method3":
-            config = self.method3_config
-        elif method == "method4":
-            config = self.method4_config
-        elif method == "method5":
-            config = self.method5_config
-        else:
-            raise ValueError("Method must be 'method1', 'method2', 'method3', 'method4', 'method5'")
-                
-        results = self._retrieve_with_method(query_image_path, config, k)
-        
-        return results
-    
-    def get_method_info(self, method="method1"):
-        """Get information about a specific method"""
-        if method == "method1":
-            config = self.method1_config
-        elif method == "method2":
-            config = self.method2_config
-        elif method == "method3":
-            config = self.method3_config
-        elif method == "method4":
-            config = self.method4_config
-        elif method == "method5":
-            config = self.method5_config
-        else:
-            raise ValueError("Method must be 'method1', 'method2', 'method3', 'method4', 'method5'")
-        
-        return {
-            "method": method,
-            "descriptors": config["descriptors"],
-            "weights1": config["weights1"],
-            "weights2": config["weights2"],
-            "bins": config["bins"],
-            "similarity_measures": ["L1", "Histogram Intersection", "KL Divergence"]  # Based on indices used
-        }
+        config = getattr(self, f"{method}_config", None)
+        if not config:
+            raise ValueError(f"Unknown method: {method}")
+        return self._retrieve_with_method(query_image_path, config, k)
 
-    def evaluate_on_qsd1(self, query_path="../Data/Week1/qsd1_w1/", gt_path="../Data/Week1/qsd1_w1/gt_corresps.pkl", k_values=[1, 5]):
-        """
-        Evaluate both methods on qsd1_w1 dataset and calculate MAP scores
-        
-        Args:
-            query_path (str): Path to query images folder
-            gt_path (str): Path to ground truth file
-            k_values (list): List of K values for MAP@K calculation
-            
-        Returns:
-            dict: Results with MAP scores for both methods
-        """
+    def evaluate_on_qsd1(self, query_path="Data/Week1/qsd1_w1/", gt_path="Data/Week1/qsd1_w1/gt_corresps.pkl", k_values=[1, 5]):
         print("Loading ground truth...")
-        ground_truth = load_ground_truth(gt_path)
-        if ground_truth is None:
+        gt = load_ground_truth(gt_path)
+        if gt is None or not os.path.exists(query_path):
+            print("Missing ground truth or query folder.")
             return None
-        
-        # Get query images
-        if not os.path.exists(query_path):
-            print(f"Query path not found: {query_path}")
-            return None
-            
-        query_images = [f for f in os.listdir(query_path) if f.endswith('.jpg')]
-        query_images.sort()
-        
-        print(f"Found {len(query_images)} query images")
-        print(f"Ground truth has {len(ground_truth)} entries")
-        
-        results = {
-            "method1": {"predictions": [], "map_scores": {}},
-            "method2": {"predictions": [], "map_scores": {}}
-            "method3": {"predictions": [], "map_scores": {}}
-            "method4": {"predictions": [], "map_scores": {}}
-            "method5": {"predictions": [], "map_scores": {}}
-        }
-        
-        # Evaluate Method 1
-        print("\n=== Evaluating Method 1 (CIELAB + HLS) ===")
-        method1_predictions = []
-        for img_name in tqdm(query_images, desc="Method 1"):
-            img_path = os.path.join(query_path, img_name)
-            similar_images = self.retrieve_similar_images(img_path, method="method1", k=max(k_values))
-            # Convert to image IDs (remove extension and convert to int)
-            image_ids = [int(os.path.splitext(img)[0].split('_')[-1]) for img in similar_images]
-            method1_predictions.append(image_ids)
-        
-        results["method1"]["predictions"] = method1_predictions
-        
-        # Evaluate Method 2
-        print("\n=== Evaluating Method 2 (CIELAB + HSV) ===")
-        method2_predictions = []
-        for img_name in tqdm(query_images, desc="Method 2"):
-            img_path = os.path.join(query_path, img_name)
-            similar_images = self.retrieve_similar_images(img_path, method="method2", k=max(k_values))
-            # Convert to image IDs (remove extension and convert to int)
-            image_ids = [int(os.path.splitext(img)[0].split('_')[-1]) for img in similar_images]
-            method2_predictions.append(image_ids)
-        
-        results["method2"]["predictions"] = method2_predictions
 
-        # Evaluate Method 3
-        print("\n=== Evaluating Method 3 ===")
-        method3_predictions = []
-        for img_name in tqdm(query_images, desc="Method 3"):
-            img_path = os.path.join(query_path, img_name)
-            similar_images = self.retrieve_similar_images(img_path, method="method3", k=max(k_values))
-            # Convert to image IDs (remove extension and convert to int)
-            image_ids = [int(os.path.splitext(img)[0].split('_')[-1]) for img in similar_images]
-            method3_predictions.append(image_ids)
-        
-        results["method3"]["predictions"] = method3_predictions
+        query_imgs = sorted([f for f in os.listdir(query_path) if f.endswith(".jpg")])
+        print(f"Found {len(query_imgs)} queries.")
 
-        # Evaluate Method 4
-        print("\n=== Evaluating Method 4 ===")
-        method4_predictions = []
-        for img_name in tqdm(query_images, desc="Method 4"):
-            img_path = os.path.join(query_path, img_name)
-            similar_images = self.retrieve_similar_images(img_path, method="method4", k=max(k_values))
-            # Convert to image IDs (remove extension and convert to int)
-            image_ids = [int(os.path.splitext(img)[0].split('_')[-1]) for img in similar_images]
-            method4_predictions.append(image_ids)
-        
-        results["method4"]["predictions"] = method4_predictions
+        results = {m: {"predictions": [], "map_scores": {}} for m in
+                   ["method1", "method2", "method3", "method4", "method5"]}
 
-        # Evaluate Method 5
-        print("\n=== Evaluating Method 5 ===")
-        method5_predictions = []
-        for img_name in tqdm(query_images, desc="Method 5"):
-            img_path = os.path.join(query_path, img_name)
-            similar_images = self.retrieve_similar_images(img_path, method="method5", k=max(k_values))
-            # Convert to image IDs (remove extension and convert to int)
-            image_ids = [int(os.path.splitext(img)[0].split('_')[-1]) for img in similar_images]
-            method5_predictions.append(image_ids)
-        
-        results["method5"]["predictions"] = method5_predictions
-        
-        # Calculate MAP scores
+        for method in results:
+            print(f"\n=== Evaluating {method.upper()} ===")
+            preds = []
+            for img in tqdm(query_imgs, desc=method):
+                qpath = os.path.join(query_path, img)
+                sims = self.retrieve_similar_images(qpath, method=method, k=max(k_values))
+                ids = [int(os.path.splitext(s)[0].split("_")[-1]) for s in sims]
+                preds.append(ids)
+            results[method]["predictions"] = preds
+
         print("\n=== Calculating MAP Scores ===")
         for k in k_values:
-            # Method 1
-            map1_k = mapk(ground_truth, method1_predictions, k)
-            results["method1"]["map_scores"][f"MAP@{k}"] = map1_k
-            
-            # Method 2
-            map2_k = mapk(ground_truth, method2_predictions, k)
-            results["method2"]["map_scores"][f"MAP@{k}"] = map2_k
+            print(f"\nMAP@{k}:")
+            for method in results:
+                score = mapk(gt, results[method]["predictions"], k)
+                results[method]["map_scores"][f"MAP@{k}"] = score
+                print(f"  {method.upper()}: {score:.4f}")
 
-             # Method 3
-            map3_k = mapk(ground_truth, method3_predictions, k)
-            results["method3"]["map_scores"][f"MAP@{k}"] = map3_k
-
-             # Method 4
-            map4_k = mapk(ground_truth, method4_predictions, k)
-            results["method4"]["map_scores"][f"MAP@{k}"] = map4_k
-
-             # Method 5
-            map5_k = mapk(ground_truth, method5_predictions, k)
-            results["method5"]["map_scores"][f"MAP@{k}"] = map5_k
-            
-            print(f"MAP@{k}:")
-            print(f"  Method 1 (CIELAB + HLS): {map1_k:.4f}")
-            print(f"  Method 2 (CIELAB + HSV): {map2_k:.4f}")
-            print(f"  Method 3 : {map3_k:.4f}")
-            print(f"  Method 4 : {map4_k:.4f}")
-            print(f"  Method 5 : {map5_k:.4f}")
-        
-        # Determine best method
-        best_method = max(results, key=lambda m: results[m]["MAP@5"])
+        best_method = max(results, key=lambda m: results[m]["map_scores"]["MAP@5"])
         results["best_method"] = best_method
-        
-        print(f"\nBest performing method: {best_method}")
-        
+        print(f"\n Best performing method: {best_method}")
         return results
 
 
 def main():
-    """Example usage of the Image Retrieval System"""
-    # Initialize the retrieval system
     retriever = ImageRetrieval()
-    
-    # Example query (you would replace this with actual query image path)
-    query_path = "../Data/Week1/qst1_w1/00001.jpg"  # Example path
-    
+
+    query_path = "../Data/Week1/qst1_w1/00001.jpg"
     if os.path.exists(query_path):
-        # Retrieve using method1
-        print("=== METHOD 1 ===")
-        results1 = retriever.retrieve_similar_images(query_path, method="method1", k=10)
-        
-        print("Top 10 similar images (Method 1):")
-        for i, image_name in enumerate(results1, 1):
-            print(f"{i}. {image_name}")
-        
-        print("\n=== METHOD 2 ===")
-        results2 = retriever.retrieve_similar_images(query_path, method="method2", k=10)
-        
-        print("Top 10 similar images (Method 2):")
-        for i, image_name in enumerate(results2, 1):
-            print(f"{i}. {image_name}")
-
-        print("\n=== METHOD 5 ===")
-        results5 = retriever.retrieve_similar_images(query_path, method="method5", k=10)
-        
-        print("Top 10 similar images (Method 5):")
-        for i, image_name in enumerate(results5, 1):
-            print(f"{i}. {image_name}")
-
-        print("\n=== METHOD 3 ===")
-        results3 = retriever.retrieve_similar_images(query_path, method="method3", k=10)
-        
-        print("Top 10 similar images (Method 3):")
-        for i, image_name in enumerate(results3, 1):
-            print(f"{i}. {image_name}")
-
-        print("\n=== METHOD 4 ===")
-        results4 = retriever.retrieve_similar_images(query_path, method="method4", k=10)
-        
-        print("Top 10 similar images (Method 4):")
-        for i, image_name in enumerate(results4, 1):
-            print(f"{i}. {image_name}")
-        
-        # Show method information
-        print("\n=== METHOD INFO ===")
-        print("Method 1:", retriever.get_method_info("method1"))
-        print("Method 2:", retriever.get_method_info("method2"))
-        print("Method 3:", retriever.get_method_info("method3"))
-        print("Method 4:", retriever.get_method_info("method4"))
-        print("Method 5:", retriever.get_method_info("method5"))
-    
+        print("\n=== RETRIEVAL EXAMPLES ===")
+        for method in ["method1", "method2", "method3", "method4", "method5"]:
+            print(f"\n--- {method.upper()} ---")
+            res = retriever.retrieve_similar_images(query_path, method=method, k=5)
+            for i, img in enumerate(res, 1):
+                print(f"{i}. {img}")
     else:
-        print(f"Query image not found: {query_path}")
-        print("Please provide a valid query image path")
+        print(f"Query not found: {query_path}")
 
-    # Evaluate on qsd1_w1 dataset
     print("\n=== EVALUATION ON QSD1_W1 DATASET ===")
-    evaluation_results = retriever.evaluate_on_qsd1()
+    retriever.evaluate_on_qsd1()
 
 
 if __name__ == "__main__":
