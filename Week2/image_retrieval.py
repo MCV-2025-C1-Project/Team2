@@ -301,7 +301,7 @@ class ImageRetrieval:
             raise ValueError(f"Unknown method: {method}")
         return self._retrieve_with_method(query_image_path, config, k)
 
-    def evaluate_on_qsd1(self, query_path="Data/Week1/qsd1_w1/", gt_path="Data/Week1/qsd1_w1/gt_corresps.pkl", k_values=[1, 5]):
+    def evaluate_on_qsd1(self, query_path="../Data/Week1/qsd1_w1/", gt_path="../Data/Week1/qsd1_w1/gt_corresps.pkl", k_values=[1, 5]):
         print("Loading ground truth...")
         gt = load_ground_truth(gt_path)
         if gt is None or not os.path.exists(query_path):
