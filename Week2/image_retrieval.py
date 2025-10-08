@@ -42,7 +42,7 @@ class ImageRetrieval:
     Image Retrieval System using optimized methods from Week 1
     """
 
-    def __init__(self, database_path="Data/BBDD/", cache_path="cache/"):
+    def __init__(self, database_path="../Data/BBDD/", cache_path="cache/"):
         self.database_path = database_path
         self.cache_path = cache_path
         os.makedirs(cache_path, exist_ok=True)
