@@ -361,8 +361,14 @@ class ImageRetrieval:
             config = self.method1_config
         elif method == "method2":
             config = self.method2_config
+        elif method == "method3":
+            config = self.method3_config
+        elif method == "method4":
+            config = self.method4_config
+        elif method == "method5":
+            config = self.method5_config
         else:
-            raise ValueError("Method must be 'method1' or 'method2'")
+            raise ValueError("Method must be 'method1', 'method2', 'method3', 'method4', 'method5'")
                 
         results = self._retrieve_with_method(query_image_path, config, k)
         
@@ -374,8 +380,14 @@ class ImageRetrieval:
             config = self.method1_config
         elif method == "method2":
             config = self.method2_config
+        elif method == "method3":
+            config = self.method3_config
+        elif method == "method4":
+            config = self.method4_config
+        elif method == "method5":
+            config = self.method5_config
         else:
-            raise ValueError("Method must be 'method1' or 'method2'")
+            raise ValueError("Method must be 'method1', 'method2', 'method3', 'method4', 'method5'")
         
         return {
             "method": method,
@@ -417,6 +429,9 @@ class ImageRetrieval:
         results = {
             "method1": {"predictions": [], "map_scores": {}},
             "method2": {"predictions": [], "map_scores": {}}
+            "method3": {"predictions": [], "map_scores": {}}
+            "method4": {"predictions": [], "map_scores": {}}
+            "method5": {"predictions": [], "map_scores": {}}
         }
         
         # Evaluate Method 1
@@ -442,6 +457,42 @@ class ImageRetrieval:
             method2_predictions.append(image_ids)
         
         results["method2"]["predictions"] = method2_predictions
+
+        # Evaluate Method 3
+        print("\n=== Evaluating Method 3 ===")
+        method3_predictions = []
+        for img_name in tqdm(query_images, desc="Method 3"):
+            img_path = os.path.join(query_path, img_name)
+            similar_images = self.retrieve_similar_images(img_path, method="method3", k=max(k_values))
+            # Convert to image IDs (remove extension and convert to int)
+            image_ids = [int(os.path.splitext(img)[0].split('_')[-1]) for img in similar_images]
+            method3_predictions.append(image_ids)
+        
+        results["method3"]["predictions"] = method3_predictions
+
+        # Evaluate Method 4
+        print("\n=== Evaluating Method 4 ===")
+        method4_predictions = []
+        for img_name in tqdm(query_images, desc="Method 4"):
+            img_path = os.path.join(query_path, img_name)
+            similar_images = self.retrieve_similar_images(img_path, method="method4", k=max(k_values))
+            # Convert to image IDs (remove extension and convert to int)
+            image_ids = [int(os.path.splitext(img)[0].split('_')[-1]) for img in similar_images]
+            method4_predictions.append(image_ids)
+        
+        results["method4"]["predictions"] = method4_predictions
+
+        # Evaluate Method 5
+        print("\n=== Evaluating Method 5 ===")
+        method5_predictions = []
+        for img_name in tqdm(query_images, desc="Method 5"):
+            img_path = os.path.join(query_path, img_name)
+            similar_images = self.retrieve_similar_images(img_path, method="method5", k=max(k_values))
+            # Convert to image IDs (remove extension and convert to int)
+            image_ids = [int(os.path.splitext(img)[0].split('_')[-1]) for img in similar_images]
+            method5_predictions.append(image_ids)
+        
+        results["method5"]["predictions"] = method5_predictions
         
         # Calculate MAP scores
         print("\n=== Calculating MAP Scores ===")
@@ -453,13 +504,28 @@ class ImageRetrieval:
             # Method 2
             map2_k = mapk(ground_truth, method2_predictions, k)
             results["method2"]["map_scores"][f"MAP@{k}"] = map2_k
+
+             # Method 3
+            map3_k = mapk(ground_truth, method3_predictions, k)
+            results["method3"]["map_scores"][f"MAP@{k}"] = map3_k
+
+             # Method 4
+            map4_k = mapk(ground_truth, method4_predictions, k)
+            results["method4"]["map_scores"][f"MAP@{k}"] = map4_k
+
+             # Method 5
+            map5_k = mapk(ground_truth, method5_predictions, k)
+            results["method5"]["map_scores"][f"MAP@{k}"] = map5_k
             
             print(f"MAP@{k}:")
             print(f"  Method 1 (CIELAB + HLS): {map1_k:.4f}")
             print(f"  Method 2 (CIELAB + HSV): {map2_k:.4f}")
+            print(f"  Method 3 : {map3_k:.4f}")
+            print(f"  Method 4 : {map4_k:.4f}")
+            print(f"  Method 5 : {map5_k:.4f}")
         
         # Determine best method
-        best_method = "method1" if results["method1"]["map_scores"]["MAP@5"] > results["method2"]["map_scores"]["MAP@5"] else "method2"
+        best_method = max(results, key=lambda m: results[m]["MAP@5"])
         results["best_method"] = best_method
         
         print(f"\nBest performing method: {best_method}")
@@ -490,11 +556,35 @@ def main():
         print("Top 10 similar images (Method 2):")
         for i, image_name in enumerate(results2, 1):
             print(f"{i}. {image_name}")
+
+        print("\n=== METHOD 5 ===")
+        results5 = retriever.retrieve_similar_images(query_path, method="method5", k=10)
+        
+        print("Top 10 similar images (Method 5):")
+        for i, image_name in enumerate(results5, 1):
+            print(f"{i}. {image_name}")
+
+        print("\n=== METHOD 3 ===")
+        results3 = retriever.retrieve_similar_images(query_path, method="method3", k=10)
+        
+        print("Top 10 similar images (Method 3):")
+        for i, image_name in enumerate(results3, 1):
+            print(f"{i}. {image_name}")
+
+        print("\n=== METHOD 4 ===")
+        results4 = retriever.retrieve_similar_images(query_path, method="method4", k=10)
+        
+        print("Top 10 similar images (Method 4):")
+        for i, image_name in enumerate(results4, 1):
+            print(f"{i}. {image_name}")
         
         # Show method information
         print("\n=== METHOD INFO ===")
         print("Method 1:", retriever.get_method_info("method1"))
         print("Method 2:", retriever.get_method_info("method2"))
+        print("Method 3:", retriever.get_method_info("method3"))
+        print("Method 4:", retriever.get_method_info("method4"))
+        print("Method 5:", retriever.get_method_info("method5"))
     
     else:
         print(f"Query image not found: {query_path}")
