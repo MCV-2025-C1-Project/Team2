@@ -27,7 +27,7 @@ from helper_functions_main import pil_to_cv2, create_histogram_with_bins
 from mapk import mapk
 
 
-def load_ground_truth(gt_path="Data/Week1/qsd1_w1/gt_corresps.pkl"):
+def load_ground_truth(gt_path="../Data/Week1/qsd1_w1/gt_corresps.pkl"):
     """Load ground truth correspondences"""
     if os.path.exists(gt_path):
         with open(gt_path, "rb") as f:
