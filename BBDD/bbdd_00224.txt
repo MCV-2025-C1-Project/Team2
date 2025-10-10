@@ -1,1 +1,0 @@
-('Francesc Ruestes', 'El codi secret de la creacio')

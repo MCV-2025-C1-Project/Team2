@@ -1,1 +1,0 @@
-('Antoni Clave', 'Ovale et etoiles')

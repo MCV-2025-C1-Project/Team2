@@ -1,1 +1,0 @@
-('Corneille', 'Spring in the Desert')

@@ -1,1 +1,0 @@
-('Regina Gimenez', 'Les edats del mar')

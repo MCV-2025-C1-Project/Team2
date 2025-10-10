@@ -1,1 +1,0 @@
-('Anders Svarstad', 'Via Bocca di Leone')

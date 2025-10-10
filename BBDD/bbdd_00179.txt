@@ -1,1 +1,0 @@
-('Xevi Vilaro', 'El traspas')

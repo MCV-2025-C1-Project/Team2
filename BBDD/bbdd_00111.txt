@@ -1,1 +1,0 @@
-('Gino Rubert', 'S/t')

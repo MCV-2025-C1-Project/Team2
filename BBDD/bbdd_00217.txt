@@ -1,1 +1,0 @@
-('Gregori Iglesias', 'Cadira de Pol')

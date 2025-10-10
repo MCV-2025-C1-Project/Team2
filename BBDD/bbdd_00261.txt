@@ -1,1 +1,0 @@
-('Frederic Amat', "Poema d'octubre")

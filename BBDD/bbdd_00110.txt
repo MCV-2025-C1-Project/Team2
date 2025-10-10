@@ -1,1 +1,0 @@
-('Antoni Tapies', 'Materia de la cortina')

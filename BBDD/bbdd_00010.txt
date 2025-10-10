@@ -1,1 +1,0 @@
-('Agusti Puig', 'Sota la lleona')

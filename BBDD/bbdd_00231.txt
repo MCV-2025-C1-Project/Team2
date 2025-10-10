@@ -1,1 +1,0 @@
-('Xevi Vilaro', 'Stand by')

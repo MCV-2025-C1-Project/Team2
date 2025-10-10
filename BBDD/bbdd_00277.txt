@@ -1,1 +1,0 @@
-('Pere Santilari', 'Sifo groc')

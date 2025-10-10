@@ -1,1 +1,0 @@
-('Julio Vaquero', 'Dibuix preparatori per zigurat de misteris')

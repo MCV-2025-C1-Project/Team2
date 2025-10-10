@@ -1,1 +1,0 @@
-('Andre Lhote', 'The Port in Bordeaux')
