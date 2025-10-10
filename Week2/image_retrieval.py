@@ -1,10 +1,4 @@
-"""
-Image Retrieval System - Week 2
-Content-Based Image Retrieval using optimized algorithms from Week 1
 
-This module provides a simple interface to retrieve similar images from the BBDD database
-using the best performing methods identified in Week 1.
-"""
 
 import os
 import pickle
