@@ -63,6 +63,11 @@ def emd_matrix(Q, M):
         for j in range(nm):
             D[i, j] = wasserstein_distance(bins, bins, u_weights=Q[i], v_weights=M[j])
     return D  # smaller = more similar
+
+def canberra_distance_matrix(Q, M, eps=1e-10):
+    num = np.abs(Q[:, None, :] - M[None, :, :])
+    denom = np.abs(Q[:, None, :]) + np.abs(M[None, :, :]) + eps
+    return np.sum(num / denom, axis=2)
     
     
 #Normalization 
@@ -85,6 +90,7 @@ def measure_similarities(query_hist, museum_hist, distance_func, top_k):
         correlation: correlation_matrix,
         kl_divergence: kl_divergence_matrix,
         emd: emd_matrix,
+        canberra_distance: canberra_distance_matrix,
         } 
         
     D = func_map[distance_func](Q, M) # (nq, nm) matrix 
