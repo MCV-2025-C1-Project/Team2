@@ -14,7 +14,7 @@ from tqdm import tqdm
 from PIL import Image
 
 from week2_histograms import Histogram2D, Histogram3D, BlockHistogram, SpatialPyramidHistogram
-from similarity_measures import (
+from similarity_measures_optimized import (
     l1_distance_matrix,
     histogram_intersection_matrix,
     kl_divergence_matrix,
