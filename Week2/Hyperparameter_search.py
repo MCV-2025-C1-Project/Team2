@@ -103,8 +103,8 @@ def main():
     retriever = ImageRetrieval()
     search = HyperparameterSearch(retriever)
 
-    query_path = "Data/Week1/qsd1_w1/"
-    gt_path = "Data/Week1/qsd1_w1/gt_corresps.pkl"
+    query_path = "../Data/Week1/qsd1_w1/"
+    gt_path = "../Data/Week1/qsd1_w1/gt_corresps.pkl"
 
     # Combine all experiment sets
     all_experiments = {}
