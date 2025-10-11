@@ -6,3 +6,6 @@ Week2/cache/
 Week2/__pycache__/
 .venv/
 .vscode/
+Week2/hp_cache/
+Week2/hp_results/
+Week2/.venv
