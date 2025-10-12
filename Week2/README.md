@@ -65,5 +65,29 @@ print(results)
 - Make sure the database and query image paths are correct relative to your working directory.
 - The first run may take longer due to histogram computation and caching.
 
+# Background Removal System - Week 2
+
+Given an artwork picture, it gives the mask for removing the background.
+
+## Usage
+
+### 1. Requirements
+- Python 3.9 or higher.
+- Install dependencies:
+  ```bash
+  pip install -r requirements.txt
+  ```
+
+### 2. Running the Example
+Jupyter Notebook file `ad2_bckg_rmv.ipynb` has the code to run the algorithm on the data stored in `qsd2_w2\` folder.
+
+### 3. Using the Background Removal System in Your Code
+You can import and use the `background_remover.py` in your own scripts:
+```python
+from background_remover import *
+im = imageio.imread("path/to/image.jpg")
+original_image, pred_mask, foreground, grad_norm = remove_background_morphological_gradient(im)
+```
+
 ## Authors
 Team 2 - MCV 2025 C1 Project
