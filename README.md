@@ -7,7 +7,7 @@ The system compares visual features using **histogram-based descriptors** and **
 
 ---
 
-## ⚙️ Installation
+## Installation
 
 This project was developed using **Python 3.9**, but any version **≥ 3.8** should work.
 
