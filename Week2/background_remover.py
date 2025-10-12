@@ -238,7 +238,7 @@ def normalize_gradient(grad):
 
 
 
-def remove_background_morphological_gradient(image, thr=20, pixel_border=15, gradient_threshold=0.15):
+def remove_background_morphological_gradient(im, thr=20, pixel_border=15, gradient_threshold=0.15):
     """
     Remove background from an image using morphological gradient detection and polygon fitting.
     
@@ -259,7 +259,6 @@ def remove_background_morphological_gradient(image, thr=20, pixel_border=15, gra
         (original_image, mask, output_image, normalized_gradient)
     """
     # Preprocess
-    im = median_filter(image, size=3)
     
     im_lab = convert_to_representation(im)
     mask, grad = compute_edge_mask(im_lab, gradient_threshold)
