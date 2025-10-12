@@ -22,12 +22,14 @@ from similarity_measures_optimized import (
     kl_divergence_matrix,
     normalize_hist
 )
-from helper_functions_main import pil_to_cv2, create_histogram_with_bins
 from mapk import mapk
 
 CACHE_DIR = "hp_cache/"
 
 # Define Utility Functions
+def pil_to_cv2(img):
+    """Convert PIL image to OpenCV format."""
+    return cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
 
 def filename_to_id(fname):
     """Convert a database filename to integer id"""
