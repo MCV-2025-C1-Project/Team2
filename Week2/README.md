@@ -11,7 +11,6 @@ This week’s tasks are organized into four main groups, each corresponding to a
 - **Task 6:** Submission files  
   _Main file:_ `task6.py`
 
----
 
 ## New Histogram Types
 
@@ -24,7 +23,6 @@ Supporting functions are located in:
   These results are **cached** for faster future runs.  
 - The notebook also generates the **QST1-W2 submission** and the **visualizations** used in the slides.
 
----
 
 ## Background Removal System
 
@@ -35,14 +33,12 @@ Core functions are implemented in `background_remover.py`.
 
 Additionally, `visualizer.ipynb` provides an **interactive web interface** to visualize and adjust the background removal process in real time.  
 
----
 
 ## Complete Pipeline
 
 `task5_evaluation.py` combines the background removal system with the image retrieval method to handle images containing backgrounds.  
 Running this script produces the evaluation metrics for the **development test**.
 
----
 
 ## Result Submission
 
@@ -50,14 +46,12 @@ Running this script produces the evaluation metrics for the **development test**
 - Create the **submission masks**.  
 - Generate the **pickle file** for **QST2-W2**.
 
----
 
 ## Notes
 
 Running the experiments will automatically create some cache folders for storing intermediate results.  
 These are already included in `.gitignore` to avoid being pushed to GitHub.
 
----
 
 ## Authors
 
