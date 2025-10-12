@@ -6,26 +6,35 @@ from scipy import ndimage
 import cv2
 
 
-def convert_to_grayscale(image):
-    """Convert RGB image to grayscale using LAB color space (L channel)."""
+def convert_to_representation(image):
+    """Convert RGB image to LAB and return all channels as float arrays."""
     im_lab = cv2.cvtColor((image * 255).astype(np.uint8), cv2.COLOR_RGB2LAB)
     L, a, b = cv2.split(im_lab)
-    return L.astype(float)
+    return L.astype(float), a.astype(float), b.astype(float)
 
 
-def compute_edge_mask(im_gray, gradient_threshold=0.15):
-    """Compute morphological gradient and create binary edge mask."""
-    # Compute morphological gradient to detect edge changes
-    grad = morphological_gradient(im_gray, structure=np.ones((5, 5)))
-    
+
+def compute_edge_mask(im_lab, gradient_threshold=0.15):
+    """Compute morphological gradient on LAB channels and combine."""
+    L, a, b = im_lab
+
+    # Compute morphological gradients per channel
+    grad_L = morphological_gradient(L, structure=np.ones((5, 5)))
+    grad_a = morphological_gradient(a, structure=np.ones((5, 5)))
+    grad_b = morphological_gradient(b, structure=np.ones((5, 5)))
+
+    # Combine gradients using Euclidean magnitude
+    grad_combined = np.sqrt((grad_L**2) + (grad_a**2) + (grad_b**2))
+
     # Threshold to highlight edges
-    threshold = np.max(grad) * gradient_threshold
-    grad_bin = grad > threshold
-    
-    # Apply opening to remove small objects
+    threshold = np.max(grad_combined) * gradient_threshold
+    grad_bin = grad_combined > threshold
+
+    # Apply opening to clean noise
     mask = binary_opening(grad_bin, structure=np.ones((3, 3)))
-    
-    return mask, grad
+
+    return mask, grad_combined
+
 
 
 def create_border_suppressed_mask(mask_bool, pixel_border, h, w):
@@ -225,6 +234,10 @@ def normalize_gradient(grad):
     return grad_norm.astype(np.uint8)
 
 
+
+
+
+
 def remove_background_morphological_gradient(image, thr=20, pixel_border=15, gradient_threshold=0.15):
     """
     Remove background from an image using morphological gradient detection and polygon fitting.
@@ -248,12 +261,8 @@ def remove_background_morphological_gradient(image, thr=20, pixel_border=15, gra
     # Preprocess
     im = median_filter(image, size=3)
     
-    # Convert to grayscale using LAB color space
-    im_gray = convert_to_grayscale(im)
-    
-    # Compute edge mask and gradient
-    mask, grad = compute_edge_mask(im_gray, gradient_threshold)
-    
+    im_lab = convert_to_representation(im)
+    mask, grad = compute_edge_mask(im_lab, gradient_threshold)
     
     # Setup for border pixel processing
     mask_bool = mask.astype(bool)
@@ -278,6 +287,8 @@ def remove_background_morphological_gradient(image, thr=20, pixel_border=15, gra
         left_filtered, right_filtered, top_filtered, bottom_filtered,
         rows_any, cols_any, mask_bool.shape
     )
+
+
     
     # Fit lines and compute polygon corners
     final_corners = compute_polygon_corners(
@@ -287,13 +298,11 @@ def remove_background_morphological_gradient(image, thr=20, pixel_border=15, gra
     # Create polygon mask
     poly_mask = create_polygon_mask(final_corners, (h, w), border_mask)
     
-    # Apply mask to image
+    # Apply final mask to image
     output_image = im * poly_mask[:, :, np.newaxis]
     
     # Normalize gradient for visualization
     grad_norm = normalize_gradient(grad)
+
     
     return im, poly_mask, output_image, grad_norm
-
-
-
