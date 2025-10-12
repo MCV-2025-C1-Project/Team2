@@ -105,6 +105,8 @@ def build_descriptors_cached(image_list, base_path, color_space, cache_name):
         
     return descriptors
 
+
+
 def evaluate_best_method():
     """Evaluate the best performing method from Week 2"""
     print("=== Evaluating Best Week 2 Method ===")
@@ -151,19 +153,25 @@ def evaluate_best_method():
     # Combine with equal weights
     combined = 0.5 * (weighted_hsv + weighted_hls)
     
-    # Get rankings and evaluate only MAP@1
+    # Get rankings
     print("\nEvaluating rankings...")
     predictions = []
     for q_idx in range(combined.shape[0]):
-        top_k = np.argsort(combined[q_idx])[:1]  # Only get top-1
+        top_k = np.argsort(combined[q_idx])[:5]  # get top-5 now
         pred_ids = [filename_to_id(db_images[idx]) for idx in top_k]
         predictions.append(pred_ids)
     
+    # Evaluate MAP@1 and MAP@5
     map1 = mapk(gt, predictions, k=1)
+    map5 = mapk(gt, predictions, k=5)
+    
     print(f"\n=== Results ===")
     print(f"MAP@1: {map1:.4f}")
-        
-    return map1
+    print(f"MAP@5: {map5:.4f}")
+    
+    return map1, map5
+
+
 
 if __name__ == "__main__":
     evaluate_best_method()
