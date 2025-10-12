@@ -15,14 +15,6 @@ To clone and set up the repository:
 
 ```bash
 git clone https://github.com/MCV-2025-C1-Project/Team2.git && cd Team2
-
-## Installation
-This project has been developed using Python 3.9, but any Python version above Python 3.8 should work.
-
-To clone this repo you can do:
-
-```bash
-git clone https://github.com/MCV-2025-C1-Project/Team2.git && cd Team2
 ```
 
 We recommend installing the required libraries inside a virtual environment:
