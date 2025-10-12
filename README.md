@@ -1,10 +1,20 @@
 # C1 Project
-Welcome to Team2's project for the C1 course from the MCV 25-26.
 
-With this project, given a certain database of images (i.e. art from a museum) you can retrieve information of each element of the database with another image taken by you. This technique is called Content Based Image Retrieval (CBIR) and uses various histogram descriptors and similarity measures to find the right match and provide the relevant information. (Be aware that the algorithm is not perfect and it can fail and retrieve a different image by mistake.)
+Welcome to **Team 2’s project** for the **C1 course** from the **Master in Computer Vision (MCV 2025–26)**.
 
-## Organization
-In the next section you will find how to install and run the program. Beyond that point, we will organize the project by weeks, so we will explain what is added each week, give some insight on our decision for some implementations and give some final results we got to evaluate our algorithm.
+This project implements a **Content-Based Image Retrieval (CBIR)** system capable of retrieving information about artworks (or other visual objects) from a database given a query image.  
+The system compares visual features using **histogram-based descriptors** and **similarity measures** to find the most relevant match.  
+
+---
+
+## ⚙️ Installation
+
+This project was developed using **Python 3.9**, but any version **≥ 3.8** should work.
+
+To clone and set up the repository:
+
+```bash
+git clone https://github.com/MCV-2025-C1-Project/Team2.git && cd Team2
 
 ## Installation
 This project has been developed using Python 3.9, but any Python version above Python 3.8 should work.
@@ -62,37 +72,63 @@ The system will:
 ## Repository Structure
 ```
 Team2/
-├── README.md                    # This file
-├── requirements.txt             # Python dependencies
-├── BBDD/                       # Training database images (local only)
-├── qsd1_w1/                    # Query set 1 (development) (local only)
-├── qst1_w1/                    # Query set 1 (test) (local only)
-└── Week1/                      # Main implementation
-    ├── main.ipynb              # Main Jupyter notebook
-    ├── histograms.py           # Histogram descriptor classes
-    ├── similarity_measures_optimized.py  # Similarity measure functions
-    ├── mapk.py                 # Evaluation metrics
-    └── helper_functions_main.py # Utility functions
+├── .gitignore                # Files and folders excluded from Git
+├── README.md                 # Main project description
+├── requirements.txt          # Python dependencies
+├── Week1/                    # Week 1 experiments and analysis
+├── Week2/                    # Week 2 advanced tasks and improvements
+├── Data/                     # Local datasets (not pushed to GitHub)
+│     ├── BBDD                # Main database of reference images
+│     ├── Week1
+│     │     ├── qsd1_w1       # Query set 1 (development)
+│     │     └── qst1_w1       # Query set 1 (test)
+│     └── Week2
+│     │   ├── qsd1_w2         # Query set 1 (development)
+│     │   ├── qsd2_w2         # Query set 2 (development)
+│     └── qst_w2              # Test data for week 2
+│     │   ├── qst1_w2         # Test set 1
+│     └── qst2_w2             # Test set 2
+└── Results/                  # Output and submission files
 ```
 
-**Note**: The `BBDD/`, `qsd1_w1/`, and `qst1_w1/` directories contain the image datasets and are kept in local repositories only (not pushed to GitHub due to file size constraints).
+**Note**: The Data/ directory contains all image datasets and must follow the exact structure above for the code to run correctly. Its datasets are not pushed to GitHub and should be stored locally.
 
-## Week 1
-During the first week, our objective was to design comprehensive image descriptors and explore different configurations to determine the most effective approach for image similarity matching. We implemented 9 different histogram descriptors (RGB, HSV, CIELAB, YCbCr, XYZ, HLS, YUV, Grayscale) and 9 similarity measures (Euclidean, L1, Chi-square, Histogram Intersection, Hellinger, Cosine, Bhattacharyya, Correlation, KL Divergence).
+## Week 1 – Baseline CBIR Pipeline
 
-Our approach follows a systematic 3-stage optimization process:
+The first week focused on designing and analyzing **image descriptors** to build a baseline CBIR system.
 
-1. **Experiment 1**: Individual performance analysis - testing all 81 combinations of descriptors and similarity measures
-2. **Experiment 2**: Descriptor combination - finding optimal weighted combinations of descriptor pairs
-3. **Experiment 3**: Bin count optimization - testing different histogram bin counts (8, 16, 32, 64, 128, 256)
+We implemented multiple **color-space 1D histograms** (RGB, HSV, CIELAB, YCbCr, HLS, etc.) and **similarity measures** (Euclidean, L1, Chi-square, Correlation, etc.).  
+Experiments were carried out to:
 
+1. Evaluate all descriptor–similarity combinations.  
+2. Combine the best descriptors with learned weights.  
+3. Optimize the histogram bin sizes.
 
-The final system achieves strong performance with optimized HSV + CIELAB descriptor combinations and provides sub-second query processing after optimization.
+The resulting system effectively retrieves similar images from the database and establishes a solid baseline for later improvements.
+
+> For detailed usage, refer to the **Week1/README.md** file inside the folder.
+
+---
+
+## Week 2 – Advanced Histogram Methods and Background Removal
+
+The second week expanded the baseline with **new histogram descriptors** (2D, 3D, block-based, and pyramid histograms) and introduced a **background removal system** for better retrieval performance on artwork images.
+
+The work includes:
+- Evaluating and comparing new histogram structures.  
+- Implementing an automatic background extraction method.  
+- Combining both modules into a unified retrieval pipeline.  
+- Generating final submission files for evaluation.
+
+> Detailed instructions are provided in **Week2/README.md**.
+
+---
 
 ## Team Members
-This is the awesome team who collaborated in this project:
 
-- **Adrià Ruiz Puig**
+**Team 2 – MCV 2025 C1 Project**
+
+- **Adrià Ruiz Puig**  
 - **Pau Monserrat Llabrés**  
-- **Souparni Mazumder**
+- **Souparni Mazumder**  
 - **Benet Ramió Comas**
