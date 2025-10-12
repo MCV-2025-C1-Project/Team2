@@ -1,14 +1,39 @@
-# Week1 - Experimental CBIR Pipeline
+# Week 1 - Experimental CBIR Pipeline
 
-This folder contains the experimental pipeline for Content-Based Image Retrieval (CBIR) developed in Week1. The code here explores various histogram-based descriptors and similarity measures for image retrieval tasks.
+This week focuses on building and evaluating a **Content-Based Image Retrieval (CBIR)** system using different histogram-based descriptors and similarity measures.
 
-## Structure
-- `main.ipynb`: Jupyter notebook with the main experimental pipeline, including descriptor extraction, similarity computation, and evaluation.
-- `histograms.py`: Functions for extracting color histograms in different color spaces (CIELAB, HLS, HSV, etc.).
-- `similarity_measures.py` / `similarity_measures_optimized.py`: Functions for computing similarity between histograms (Euclidean, L1, Chi^2, etc.).
-- `mapk.py`: Custom implementation of MAP@K (Mean Average Precision at K) metrics for evaluation.
-- `helper_functions_main.py`: Helper functions for the pipeline.
-- `cache/`: Stores cached descriptors for faster experimentation.
-- `submission/`: Contains submission files and results.
+## Structure Overview
 
-Cache and submission folders are created during execution and are not included in the repository.
+- **`main.ipynb`** — Main experimental notebook containing:
+  - Descriptor extraction  
+  - Similarity computation  
+  - Evaluation and visualization of results  
+
+- **`histograms.py`** — Functions for computing color histograms in multiple color spaces (CIELAB, HLS, HSV, etc.).
+
+- **`similarity_measures.py`** / **`similarity_measures_optimized.py`** — Implementations of similarity metrics such as Euclidean, L1, and Chi² distances.
+
+- **`mapk.py`** — Custom implementation of the **MAP@K (Mean Average Precision at K)** metric used to evaluate retrieval performance.
+
+- **`helper_functions_main.py`** — Utility functions supporting data loading, normalization, and visualization.
+
+## Experimental Pipeline
+
+The notebook `main.ipynb` runs the complete pipeline:
+1. Extracts image descriptors from the dataset using different color-space histograms.  
+2. Computes pairwise similarities using multiple distance metrics.  
+3. Evaluates performance using MAP@1 and MAP@5.  
+4. Searches for optimal combinations of descriptors and weighting strategies.
+
+The experiments aim to identify the most discriminative descriptors and weighting methods for the retrieval task.
+
+
+## Notes
+
+During execution, new folders (e.g., `cache/`, `submission/`) are automatically generated to store intermediate and final outputs.  
+These are already listed in `.gitignore` and are **not pushed** to GitHub.
+
+
+## Authors
+
+**Team 2 – MCV 2025 C1 Project**
