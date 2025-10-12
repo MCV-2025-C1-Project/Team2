@@ -1,93 +1,64 @@
-# Image Retrieval System - Week 2
+# Week 2 - Usage
 
-This module implements a Content-Based Image Retrieval (CBIR) system using optimized algorithms developed in Week 1. It allows you to retrieve the most similar images from a database (BBDD) given a query image, using two best-performing methods based on color histograms and similarity measures.
+This week’s tasks are organized into four main groups, each corresponding to a primary file:
 
-## Features
-- **Efficient retrieval** of similar images from a database using color histograms (CIELAB, HSV, HLS).
-- **Two optimized retrieval methods** (method1 and method2) with different descriptor and similarity measure combinations.
-- **Caching** of computed histograms for fast repeated queries.
-- **Evaluation** of retrieval performance using MAP@K on the qsd1_w1 dataset.
+- **Task 1 & 2:** New histogram types and methods  
+  _Main file:_ `new_histogram_types.ipynb`  
+- **Task 3 & 4:** Background removal system  
+  _Main file:_ `background_remover.ipynb`  
+- **Task 5:** Complete pipeline (background removal + retrieval method)  
+  _Main file:_ `task5_evaluation.py`  
+- **Task 6:** Submission files  
+  _Main file:_ `task6.py`
 
-## Usage
+---
 
-### 1. Requirements
-- Python 3.9 or higher.
-- Install dependencies:
-  ```bash
-  pip install -r requirements.txt
-  ```
+## New Histogram Types
 
-### 2. Running the Example
-From the `Week2` directory, run:
-```bash
-python image_retrieval.py
-```
-This will:
-- Initialize the retrieval system and cache histograms if not already cached.
-- Run example queries (see `main()` in the script).
-- Print the top 10 most similar images for a sample query using both methods.
-- Show method configuration details.
-- Evaluate both methods on the qsd1_w1 dataset and print MAP@1 and MAP@5 scores.
+The notebook includes all the experiments described in the slides to evaluate the best histogram descriptors using the new types (2D, 3D, block, and pyramid).  
+Supporting functions are located in:  
+`mapk.py`, `similarity_measures_optimized.py`, `week2_histograms.py`, and `new_histogram_helper_functions.py`.
 
-### 3. Using the Retrieval System in Your Code
-You can import and use the `ImageRetrieval` class in your own scripts:
-```python
-from image_retrieval import ImageRetrieval
-retriever = ImageRetrieval(database_path="../BBDD/", cache_path="cache/")
-results = retriever.retrieve_similar_images("path/to/query.jpg", method="method1", k=10)
-print(results)
-```
+- Run all the notebook cells to reproduce the results.  
+- The **first execution** may take a long time since it computes the descriptors for the entire BBDD.  
+  These results are **cached** for faster future runs.  
+- The notebook also generates the **QST1-W2 submission** and the **visualizations** used in the slides.
 
-### 4. Methods
-- **method1**: Uses CIELAB and HLS histograms with a specific combination of similarity measures and weights.
-- **method2**: Uses CIELAB and HSV histograms with a different combination of similarity measures and weights.
+---
 
-You can get method details with:
-```python
-info = retriever.get_method_info("method1")
-print(info)
-```
+## Background Removal System
 
-### 5. Evaluation
-To evaluate retrieval performance on the qsd1_w1 dataset:
-```python
-results = retriever.evaluate_on_qsd1(query_path="../qsd1_w1/", gt_path="../qsd1_w1/gt_corresps.pkl", k_values=[1, 5])
-print(results)
-```
+Given an artwork image, this module generates a mask to remove its background.
 
-## File Structure
-- `image_retrieval.py`: Main retrieval system implementation.
-- `BBDD/`: Image database folder.
-- `cache/`: Stores cached histograms for fast access.
-- `qsd1_w1/`, `qst1_w1/`: Query and ground truth folders for evaluation.
+Run `background_remover.ipynb` to see all the processing steps.  
+Core functions are implemented in `background_remover.py`.
+
+Additionally, `visualizer.ipynb` provides an **interactive web interface** to visualize and adjust the background removal process in real time.  
+
+---
+
+## Complete Pipeline
+
+`task5_evaluation.py` combines the background removal system with the image retrieval method to handle images containing backgrounds.  
+Running this script produces the evaluation metrics for the **development test**.
+
+---
+
+## Result Submission
+
+`task6.py` contains the functions required to:
+- Create the **submission masks**.  
+- Generate the **pickle file** for **QST2-W2**.
+
+---
 
 ## Notes
-- Make sure the database and query image paths are correct relative to your working directory.
-- The first run may take longer due to histogram computation and caching.
 
-# Background Removal System - Week 2
+Running the experiments will automatically create some cache folders for storing intermediate results.  
+These are already included in `.gitignore` to avoid being pushed to GitHub.
 
-Given an artwork picture, it gives the mask for removing the background.
-
-## Usage
-
-### 1. Requirements
-- Python 3.9 or higher.
-- Install dependencies:
-  ```bash
-  pip install -r requirements.txt
-  ```
-
-### 2. Running the Example
-Jupyter Notebook file `ad2_bckg_rmv.ipynb` has the code to run the algorithm on the data stored in `qsd2_w2\` folder.
-
-### 3. Using the Background Removal System in Your Code
-You can import and use the `background_remover.py` in your own scripts:
-```python
-from background_remover import *
-im = imageio.imread("path/to/image.jpg")
-original_image, pred_mask, foreground, grad_norm = remove_background_morphological_gradient(im)
-```
+---
 
 ## Authors
-Team 2 - MCV 2025 C1 Project
+
+**Team 2 – MCV 2025 C1 Project**
