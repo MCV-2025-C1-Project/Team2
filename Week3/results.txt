@@ -1,0 +1,333 @@
+
+🔍 Resultados del grid search aplicando non-local means con:
+h_values = [10, 15, 20, 25]
+template_sizes = [3, 5, 7]
+search_sizes = [7, 11, 15]
+
+h=25, template=3, search=11 → PSNR=29.32, SSIM=0.747
+h=25, template=3, search=15 → PSNR=29.19, SSIM=0.750
+h=25, template=5, search=11 → PSNR=29.14, SSIM=0.735
+h=25, template=3, search=7 → PSNR=29.12, SSIM=0.740
+h=25, template=5, search=7 → PSNR=29.12, SSIM=0.738
+h=25, template=7, search=7 → PSNR=29.01, SSIM=0.733
+h=20, template=3, search=15 → PSNR=28.89, SSIM=0.743
+h=25, template=5, search=15 → PSNR=28.87, SSIM=0.732
+h=25, template=7, search=11 → PSNR=28.85, SSIM=0.723
+h=20, template=3, search=11 → PSNR=28.85, SSIM=0.737
+h=20, template=5, search=11 → PSNR=28.76, SSIM=0.733
+h=20, template=5, search=15 → PSNR=28.69, SSIM=0.733
+h=20, template=5, search=7 → PSNR=28.56, SSIM=0.728
+h=20, template=7, search=11 → PSNR=28.49, SSIM=0.722
+h=25, template=7, search=15 → PSNR=28.46, SSIM=0.714
+h=20, template=7, search=7 → PSNR=28.45, SSIM=0.726
+h=20, template=3, search=7 → PSNR=28.43, SSIM=0.723
+h=20, template=7, search=15 → PSNR=28.32, SSIM=0.717
+h=15, template=5, search=15 → PSNR=28.29, SSIM=0.727
+h=15, template=5, search=11 → PSNR=28.20, SSIM=0.722
+h=15, template=7, search=11 → PSNR=28.09, SSIM=0.719
+h=15, template=3, search=15 → PSNR=28.05, SSIM=0.719
+h=15, template=7, search=15 → PSNR=28.04, SSIM=0.719
+h=15, template=3, search=11 → PSNR=27.82, SSIM=0.709
+h=15, template=7, search=7 → PSNR=27.71, SSIM=0.708
+h=15, template=5, search=7 → PSNR=27.68, SSIM=0.705
+h=15, template=3, search=7 → PSNR=27.22, SSIM=0.687
+h=10, template=7, search=15 → PSNR=26.91, SSIM=0.689
+h=10, template=5, search=15 → PSNR=26.79, SSIM=0.685
+h=10, template=7, search=11 → PSNR=26.56, SSIM=0.675
+h=10, template=5, search=11 → PSNR=26.45, SSIM=0.670
+h=10, template=3, search=15 → PSNR=26.16, SSIM=0.654
+h=10, template=3, search=11 → PSNR=25.91, SSIM=0.640
+h=10, template=7, search=7 → PSNR=25.82, SSIM=0.641
+h=10, template=5, search=7 → PSNR=25.78, SSIM=0.637
+h=10, template=3, search=7 → PSNR=25.45, SSIM=0.614
+
+✅ Mejor conjunto de parámetros:
+h=25, template=3, search=11
+Media PSNR=29.32, Media SSIM=0.747
+
+
+
+🔍 Resultados del grid search aplicando bilateral filter con:
+d_values = [7, 9, 11]
+sigmaColor_values = [125, 150, 175, 200]
+sigmaSpace_values = [25, 50, 75, 100]
+
+h=7, template=200, search=25 → PSNR=29.34, SSIM=0.746
+h=7, template=200, search=50 → PSNR=29.34, SSIM=0.746
+h=7, template=200, search=75 → PSNR=29.34, SSIM=0.746
+h=7, template=200, search=100 → PSNR=29.34, SSIM=0.746
+h=7, template=175, search=25 → PSNR=29.23, SSIM=0.740
+h=7, template=175, search=50 → PSNR=29.23, SSIM=0.740
+h=7, template=175, search=100 → PSNR=29.23, SSIM=0.740
+h=7, template=175, search=75 → PSNR=29.23, SSIM=0.740
+h=9, template=175, search=25 → PSNR=29.01, SSIM=0.731
+h=9, template=175, search=50 → PSNR=29.01, SSIM=0.731
+h=9, template=175, search=75 → PSNR=29.01, SSIM=0.731
+h=9, template=175, search=100 → PSNR=29.01, SSIM=0.731
+h=9, template=200, search=25 → PSNR=28.98, SSIM=0.733
+h=9, template=200, search=50 → PSNR=28.98, SSIM=0.732
+h=9, template=200, search=75 → PSNR=28.98, SSIM=0.732
+h=9, template=200, search=100 → PSNR=28.98, SSIM=0.732
+h=7, template=150, search=100 → PSNR=28.86, SSIM=0.728
+h=7, template=150, search=75 → PSNR=28.86, SSIM=0.728
+h=7, template=150, search=50 → PSNR=28.86, SSIM=0.728
+h=7, template=150, search=25 → PSNR=28.86, SSIM=0.728
+h=9, template=150, search=25 → PSNR=28.82, SSIM=0.724
+h=9, template=150, search=50 → PSNR=28.82, SSIM=0.724
+h=9, template=150, search=75 → PSNR=28.82, SSIM=0.724
+h=9, template=150, search=100 → PSNR=28.82, SSIM=0.724
+h=11, template=175, search=25 → PSNR=28.60, SSIM=0.716
+h=11, template=175, search=50 → PSNR=28.59, SSIM=0.716
+h=11, template=175, search=75 → PSNR=28.59, SSIM=0.716
+h=11, template=175, search=100 → PSNR=28.59, SSIM=0.716
+h=11, template=150, search=25 → PSNR=28.58, SSIM=0.714
+h=11, template=150, search=50 → PSNR=28.57, SSIM=0.713
+h=11, template=150, search=75 → PSNR=28.57, SSIM=0.713
+h=11, template=150, search=100 → PSNR=28.57, SSIM=0.713
+h=11, template=200, search=25 → PSNR=28.45, SSIM=0.713
+h=11, template=200, search=50 → PSNR=28.45, SSIM=0.713
+h=11, template=200, search=75 → PSNR=28.45, SSIM=0.713
+h=11, template=200, search=100 → PSNR=28.45, SSIM=0.713
+h=9, template=125, search=100 → PSNR=28.26, SSIM=0.707
+h=9, template=125, search=75 → PSNR=28.26, SSIM=0.707
+h=9, template=125, search=50 → PSNR=28.26, SSIM=0.707
+h=9, template=125, search=25 → PSNR=28.26, SSIM=0.707
+h=11, template=125, search=25 → PSNR=28.20, SSIM=0.702
+h=11, template=125, search=50 → PSNR=28.20, SSIM=0.702
+h=11, template=125, search=75 → PSNR=28.20, SSIM=0.702
+h=11, template=125, search=100 → PSNR=28.20, SSIM=0.702
+h=7, template=125, search=100 → PSNR=28.14, SSIM=0.708
+h=7, template=125, search=75 → PSNR=28.14, SSIM=0.708
+h=7, template=125, search=50 → PSNR=28.14, SSIM=0.708
+h=7, template=125, search=25 → PSNR=28.13, SSIM=0.708
+
+✅ Mejor conjunto de parámetros:
+h=7, template=200, search=25
+Media PSNR=29.34, Media SSIM=0.746
+
+
+🔍 Resultados del grid search con non-linear mean y median filter:
+h_values = [5, 10, 15]
+template_sizes = [5, 7, 11]
+search_sizes = [11, 15, 21]
+
+h=5, template=5, search=21 → PSNR=31.48, SSIM=0.814
+h=5, template=7, search=21 → PSNR=31.43, SSIM=0.813
+h=10, template=5, search=11 → PSNR=31.42, SSIM=0.813
+h=5, template=5, search=15 → PSNR=31.41, SSIM=0.811
+h=5, template=11, search=21 → PSNR=31.38, SSIM=0.811
+h=5, template=7, search=15 → PSNR=31.38, SSIM=0.810
+h=10, template=5, search=15 → PSNR=31.37, SSIM=0.813
+h=5, template=11, search=15 → PSNR=31.35, SSIM=0.810
+h=10, template=7, search=11 → PSNR=31.30, SSIM=0.810
+h=5, template=5, search=11 → PSNR=31.29, SSIM=0.808
+h=10, template=5, search=7 → PSNR=31.29, SSIM=0.810
+h=5, template=7, search=11 → PSNR=31.28, SSIM=0.807
+h=5, template=11, search=11 → PSNR=31.26, SSIM=0.807
+h=10, template=7, search=7 → PSNR=31.24, SSIM=0.810
+h=10, template=5, search=21 → PSNR=31.21, SSIM=0.812
+h=10, template=7, search=15 → PSNR=31.20, SSIM=0.808
+h=10, template=11, search=11 → PSNR=31.20, SSIM=0.809
+h=10, template=11, search=7 → PSNR=31.19, SSIM=0.810
+h=5, template=5, search=7 → PSNR=31.06, SSIM=0.801
+h=5, template=7, search=7 → PSNR=31.05, SSIM=0.800
+h=5, template=11, search=7 → PSNR=31.04, SSIM=0.800
+h=10, template=11, search=15 → PSNR=31.01, SSIM=0.804
+h=15, template=5, search=7 → PSNR=30.98, SSIM=0.800
+h=10, template=7, search=21 → PSNR=30.97, SSIM=0.805
+h=15, template=7, search=7 → PSNR=30.84, SSIM=0.797
+h=15, template=5, search=11 → PSNR=30.82, SSIM=0.793
+h=10, template=11, search=21 → PSNR=30.68, SSIM=0.800
+h=15, template=11, search=7 → PSNR=30.67, SSIM=0.795
+h=15, template=7, search=11 → PSNR=30.54, SSIM=0.785
+h=15, template=5, search=15 → PSNR=30.54, SSIM=0.787
+h=15, template=11, search=11 → PSNR=30.28, SSIM=0.779
+h=15, template=7, search=15 → PSNR=30.17, SSIM=0.776
+h=15, template=5, search=21 → PSNR=30.14, SSIM=0.782
+h=15, template=11, search=15 → PSNR=29.78, SSIM=0.766
+h=15, template=7, search=21 → PSNR=29.69, SSIM=0.767
+h=15, template=11, search=21 → PSNR=29.19, SSIM=0.752
+
+✅ Mejor conjunto de parámetros:
+h=5, template=5, search=21
+Media PSNR=31.48, Media SSIM=0.814
+
+
+🔍 Resultados del grid search con median filter y luego non-linear means:
+h_values = [5, 10, 15]
+template_sizes = [5, 7, 11]
+search_sizes = [11, 15, 21]
+
+h=5, template=5, search=21 → PSNR=31.81, SSIM=0.821
+h=5, template=5, search=15 → PSNR=31.80, SSIM=0.821
+h=5, template=7, search=15 → PSNR=31.74, SSIM=0.818
+h=5, template=5, search=11 → PSNR=31.73, SSIM=0.820
+h=5, template=7, search=21 → PSNR=31.72, SSIM=0.817
+h=5, template=7, search=11 → PSNR=31.70, SSIM=0.818
+h=5, template=11, search=15 → PSNR=31.68, SSIM=0.816
+h=5, template=11, search=11 → PSNR=31.68, SSIM=0.817
+h=5, template=11, search=21 → PSNR=31.61, SSIM=0.814
+h=10, template=5, search=11 → PSNR=31.19, SSIM=0.793
+h=10, template=5, search=15 → PSNR=31.08, SSIM=0.791
+h=10, template=7, search=11 → PSNR=31.00, SSIM=0.785
+h=10, template=5, search=21 → PSNR=30.85, SSIM=0.789
+h=10, template=7, search=15 → PSNR=30.81, SSIM=0.781
+h=10, template=11, search=11 → PSNR=30.80, SSIM=0.780
+h=10, template=11, search=15 → PSNR=30.52, SSIM=0.772
+h=10, template=7, search=21 → PSNR=30.52, SSIM=0.776
+h=15, template=5, search=11 → PSNR=30.40, SSIM=0.768
+h=10, template=11, search=21 → PSNR=30.13, SSIM=0.764
+h=15, template=5, search=15 → PSNR=30.12, SSIM=0.764
+h=15, template=7, search=11 → PSNR=30.07, SSIM=0.756
+h=15, template=11, search=11 → PSNR=29.74, SSIM=0.746
+h=15, template=5, search=21 → PSNR=29.74, SSIM=0.760
+h=15, template=7, search=15 → PSNR=29.70, SSIM=0.748
+h=15, template=11, search=15 → PSNR=29.27, SSIM=0.733
+h=15, template=7, search=21 → PSNR=29.25, SSIM=0.741
+h=15, template=11, search=21 → PSNR=28.71, SSIM=0.722
+
+✅ Mejor conjunto de parámetros:
+h=5, template=5, search=21
+Media PSNR=31.81, Media SSIM=0.821
+
+
+🔍 Resultados del grid search con filter median y despues non-linear means:
+h_values = [3, 5, 10]
+template_sizes = [3, 5, 7]
+search_sizes = [11, 15, 21]
+
+h=5, template=3, search=21 → PSNR=31.94, SSIM=0.829
+h=5, template=3, search=15 → PSNR=31.89, SSIM=0.828
+h=5, template=5, search=21 → PSNR=31.81, SSIM=0.821
+h=5, template=5, search=15 → PSNR=31.80, SSIM=0.821
+h=5, template=3, search=11 → PSNR=31.78, SSIM=0.824
+h=3, template=7, search=21 → PSNR=31.77, SSIM=0.824
+h=3, template=5, search=21 → PSNR=31.76, SSIM=0.824
+h=5, template=7, search=15 → PSNR=31.74, SSIM=0.818
+h=5, template=5, search=11 → PSNR=31.73, SSIM=0.820
+h=5, template=7, search=21 → PSNR=31.72, SSIM=0.817
+h=3, template=3, search=21 → PSNR=31.71, SSIM=0.824
+h=5, template=7, search=11 → PSNR=31.70, SSIM=0.818
+h=3, template=7, search=15 → PSNR=31.68, SSIM=0.822
+h=3, template=5, search=15 → PSNR=31.66, SSIM=0.822
+h=3, template=3, search=15 → PSNR=31.60, SSIM=0.822
+h=3, template=7, search=11 → PSNR=31.56, SSIM=0.820
+h=10, template=3, search=11 → PSNR=31.53, SSIM=0.810
+h=3, template=5, search=11 → PSNR=31.53, SSIM=0.819
+h=10, template=3, search=15 → PSNR=31.50, SSIM=0.811
+h=3, template=3, search=11 → PSNR=31.47, SSIM=0.818
+h=10, template=3, search=21 → PSNR=31.35, SSIM=0.812
+h=10, template=5, search=11 → PSNR=31.19, SSIM=0.793
+h=10, template=5, search=15 → PSNR=31.08, SSIM=0.791
+...
+
+✅ Mejor conjunto de parámetros:
+h=5, template=3, search=21
+Media PSNR=31.94, Media SSIM=0.829
+Output is truncated. View as a scrollable element or open in a text editor. Adjust cell output settings...
+
+
+🔍 Resultados del grid search con median filter y luego nonlinear means:
+h_values = [3, 5]
+template_sizes = [3, 5, 7]
+search_sizes = [15, 21]
+
+ksize=[3]
+
+h=5, template=3, search=21, ksize=3 → PSNR=31.94, SSIM=0.829
+h=5, template=3, search=15, ksize=3 → PSNR=31.89, SSIM=0.828
+h=5, template=5, search=21, ksize=3 → PSNR=31.81, SSIM=0.821
+h=5, template=5, search=15, ksize=3 → PSNR=31.80, SSIM=0.821
+h=3, template=7, search=21, ksize=3 → PSNR=31.77, SSIM=0.824
+h=3, template=5, search=21, ksize=3 → PSNR=31.76, SSIM=0.824
+h=5, template=7, search=15, ksize=3 → PSNR=31.74, SSIM=0.818
+h=5, template=7, search=21, ksize=3 → PSNR=31.72, SSIM=0.817
+h=3, template=3, search=21, ksize=3 → PSNR=31.71, SSIM=0.824
+h=3, template=7, search=15, ksize=3 → PSNR=31.68, SSIM=0.822
+h=3, template=5, search=15, ksize=3 → PSNR=31.66, SSIM=0.822
+h=3, template=3, search=15, ksize=3 → PSNR=31.60, SSIM=0.822
+h=3, template=3, search=21, ksize=5 → PSNR=30.78, SSIM=0.783
+h=3, template=5, search=21, ksize=5 → PSNR=30.75, SSIM=0.780
+h=5, template=3, search=21, ksize=5 → PSNR=30.74, SSIM=0.781
+h=5, template=3, search=15, ksize=5 → PSNR=30.74, SSIM=0.779
+h=3, template=7, search=21, ksize=5 → PSNR=30.73, SSIM=0.777
+h=3, template=3, search=15, ksize=5 → PSNR=30.73, SSIM=0.781
+h=3, template=5, search=15, ksize=5 → PSNR=30.70, SSIM=0.778
+h=3, template=7, search=15, ksize=5 → PSNR=30.69, SSIM=0.776
+h=5, template=5, search=15, ksize=5 → PSNR=30.62, SSIM=0.773
+h=5, template=5, search=21, ksize=5 → PSNR=30.60, SSIM=0.773
+h=5, template=7, search=15, ksize=5 → PSNR=30.54, SSIM=0.767
+h=5, template=7, search=21, ksize=5 → PSNR=30.49, SSIM=0.767
+
+✅ Mejor conjunto de parámetros:
+h=5, template=3, search=21, ksize=5
+Media PSNR=31.94, Media SSIM=0.829
+
+31.22702500035015 0.8703094907597378
+23.64078981006695 0.6404528693946588
+33.109743102060214 0.8328106899898815
+38.66744267232924 0.9352318728057526
+30.658731388209027 0.8421660015269268
+31.536588632427666 0.7829116723646307
+34.711728325644984 0.9006845627411249
+[0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1]
+
+🔍 Resultados del grid search con median filter y luego bilateral filter:
+d_values = [5, 9, 11]
+sigmaColor_values = [25, 50, 75, 100]
+sigmaSpace_values = [25, 50, 75, 100]
+
+ksize=[3]
+
+h=11, template=25, search=100, ksize=3 → PSNR=31.82, SSIM=0.831
+h=11, template=25, search=75, ksize=3 → PSNR=31.82, SSIM=0.831
+h=11, template=25, search=50, ksize=3 → PSNR=31.82, SSIM=0.831
+h=11, template=25, search=25, ksize=3 → PSNR=31.82, SSIM=0.831
+h=9, template=25, search=100, ksize=3 → PSNR=31.64, SSIM=0.826
+h=9, template=25, search=75, ksize=3 → PSNR=31.64, SSIM=0.826
+h=9, template=25, search=50, ksize=3 → PSNR=31.64, SSIM=0.826
+h=9, template=25, search=25, ksize=3 → PSNR=31.64, SSIM=0.826
+h=5, template=25, search=100, ksize=3 → PSNR=31.19, SSIM=0.815
+h=5, template=25, search=75, ksize=3 → PSNR=31.19, SSIM=0.815
+h=5, template=25, search=50, ksize=3 → PSNR=31.19, SSIM=0.815
+h=5, template=25, search=25, ksize=3 → PSNR=31.19, SSIM=0.815
+h=9, template=50, search=25, ksize=3 → PSNR=31.15, SSIM=0.801
+h=9, template=50, search=50, ksize=3 → PSNR=31.15, SSIM=0.801
+h=9, template=50, search=75, ksize=3 → PSNR=31.15, SSIM=0.801
+h=9, template=50, search=100, ksize=3 → PSNR=31.15, SSIM=0.801
+h=5, template=50, search=100, ksize=3 → PSNR=31.13, SSIM=0.810
+h=5, template=50, search=75, ksize=3 → PSNR=31.13, SSIM=0.810
+h=5, template=50, search=50, ksize=3 → PSNR=31.13, SSIM=0.810
+h=5, template=50, search=25, ksize=3 → PSNR=31.13, SSIM=0.810
+h=11, template=50, search=25, ksize=3 → PSNR=31.11, SSIM=0.798
+h=11, template=50, search=50, ksize=3 → PSNR=31.11, SSIM=0.798
+h=11, template=50, search=75, ksize=3 → PSNR=31.11, SSIM=0.798
+h=11, template=50, search=100, ksize=3 → PSNR=31.11, SSIM=0.798
+h=5, template=75, search=25, ksize=3 → PSNR=30.98, SSIM=0.804
+h=5, template=75, search=50, ksize=3 → PSNR=30.98, SSIM=0.804
+h=5, template=75, search=75, ksize=3 → PSNR=30.98, SSIM=0.804
+h=5, template=75, search=100, ksize=3 → PSNR=30.98, SSIM=0.804
+h=5, template=100, search=25, ksize=3 → PSNR=30.83, SSIM=0.800
+h=5, template=100, search=50, ksize=3 → PSNR=30.83, SSIM=0.800
+h=5, template=100, search=75, ksize=3 → PSNR=30.83, SSIM=0.800
+h=5, template=100, search=100, ksize=3 → PSNR=30.83, SSIM=0.800
+h=9, template=75, search=25, ksize=3 → PSNR=30.60, SSIM=0.780
+h=9, template=75, search=50, ksize=3 → PSNR=30.59, SSIM=0.779
+h=9, template=75, search=75, ksize=3 → PSNR=30.59, SSIM=0.779
+h=9, template=75, search=100, ksize=3 → PSNR=30.59, SSIM=0.779
+h=11, template=75, search=25, ksize=3 → PSNR=30.37, SSIM=0.769
+h=11, template=75, search=50, ksize=3 → PSNR=30.36, SSIM=0.769
+h=11, template=75, search=75, ksize=3 → PSNR=30.36, SSIM=0.769
+h=11, template=75, search=100, ksize=3 → PSNR=30.36, SSIM=0.769
+h=9, template=100, search=25, ksize=3 → PSNR=30.13, SSIM=0.764
+h=9, template=100, search=50, ksize=3 → PSNR=30.13, SSIM=0.764
+h=9, template=100, search=75, ksize=3 → PSNR=30.13, SSIM=0.764
+h=9, template=100, search=100, ksize=3 → PSNR=30.13, SSIM=0.764
+h=11, template=100, search=25, ksize=3 → PSNR=29.76, SSIM=0.747
+h=11, template=100, search=50, ksize=3 → PSNR=29.76, SSIM=0.747
+h=11, template=100, search=75, ksize=3 → PSNR=29.76, SSIM=0.747
+h=11, template=100, search=100, ksize=3 → PSNR=29.75, SSIM=0.747
+
+✅ Mejor conjunto de parámetros:
+h=11, template=25, search=100, ksize=3
+Media PSNR=31.82, Media SSIM=0.831

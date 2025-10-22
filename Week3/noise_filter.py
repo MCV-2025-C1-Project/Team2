@@ -1,0 +1,183 @@
+import numpy as np
+import cv2
+import matplotlib.pyplot as plt
+from skimage.metrics import peak_signal_noise_ratio as psnr
+from skimage.metrics import structural_similarity as ssim
+
+def fourier_noise_score(img, radius_ratio=0.25, normalize=True, scale=100):
+    """
+    Computes a noise score based on the amount of high-frequency energy
+    in the image's Fourier magnitude spectrum.
+
+    Parameters:
+    ----------
+    img : np.ndarray
+        Input image (BGR or grayscale).
+    radius_ratio : float, optional
+        Fraction of the image size defining the radius of the low-frequency
+        region. Smaller values → more aggressive high-frequency detection.
+        Default = 0.25
+    normalize : bool, optional
+        Whether to normalize the magnitude spectrum before computing ratios.
+        Default = True
+    scale : float, optional
+        Scaling factor for the final score (for readability). Default = 100
+
+    Returns:
+    -------
+    noise_score : float
+        The ratio of high-frequency energy to total spectral energy.
+        Higher values → more noise.
+    """
+
+    # Convert to grayscale
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if img.ndim == 3 else img
+
+    # Compute Fourier Transform
+    f = np.fft.fft2(gray)
+    fshift = np.fft.fftshift(f)
+    magnitude = np.abs(fshift)
+
+    # Normalize magnitude if needed
+    if normalize:
+        magnitude /= magnitude.max() + 1e-8
+
+    # Create high-frequency mask
+    h, w = gray.shape
+    crow, ccol = h // 2, w // 2
+    radius = int(min(crow, ccol) * radius_ratio)
+    y, x = np.ogrid[:h, :w]
+    mask_high = ((x - ccol)**2 + (y - crow)**2) >= radius**2
+
+    # Compute ratio of high-frequency energy to total energy
+    high_energy = np.sum(magnitude[mask_high])
+    total_energy = np.sum(magnitude)
+    hf_ratio = high_energy / (total_energy + 1e-8)
+
+    noise_score = hf_ratio * scale
+    return noise_score
+
+def analyze_noise(noisy, clean):
+    # Convert to grayscale for simplicity
+    gray_noisy = cv2.cvtColor(noisy, cv2.COLOR_BGR2GRAY)
+    gray_clean = cv2.cvtColor(clean, cv2.COLOR_BGR2GRAY)
+    
+    # Compute noise residual
+    noise = gray_noisy.astype(np.float32) - gray_clean.astype(np.float32)
+    
+    mean = np.mean(noise)
+    std = np.std(noise)
+    min_val, max_val = np.min(noise), np.max(noise)
+    
+    plt.hist(noise.ravel(), bins=100, range=(-50,50))
+    plt.title("Noise distribution")
+    plt.show()
+    
+    return mean, std, min_val, max_val
+
+def classify_noise_type(img,
+                        hf_threshold=0.35,
+                        lap_var_threshold=200,
+                        extreme_threshold=0.005,
+                        snr_threshold=2.0):
+    """
+    Classifies the type of noise in an image known to be noisy.
+
+    Parameters:
+    -----------
+    img : np.ndarray
+        Input noisy image (BGR or grayscale).
+    hf_threshold : float
+        Minimum high-frequency energy ratio to consider as Gaussian/Speckle.
+    lap_var_threshold : float
+        Laplacian variance threshold to distinguish between Gaussian and compression.
+    extreme_threshold : float
+        Fraction of extreme (0/255) pixels to detect salt & pepper noise.
+    snr_threshold : float
+        Threshold on signal-to-noise ratio for Speckle/Poisson identification.
+
+    Returns:
+    --------
+    noise_type : str
+        One of ["salt_pepper", "gaussian", "speckle", "poisson", "compression", "unknown"]
+    """
+
+    # 1. Convert to grayscale
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if img.ndim == 3 else img
+    gray = gray.astype(np.float32)
+
+    # 2. Check extreme pixels → salt & pepper
+    n_pixels = gray.size
+    n_extreme = np.sum((gray < 5) | (gray > 250))
+    extreme_ratio = n_extreme / n_pixels
+    if extreme_ratio > extreme_threshold:
+        return "salt_pepper"
+
+    # 3. Fourier analysis → high-frequency ratio
+    f = np.fft.fft2(gray)
+    fshift = np.fft.fftshift(f)
+    magnitude = np.abs(fshift)
+    magnitude /= magnitude.max() + 1e-8
+
+    h, w = gray.shape
+    crow, ccol = h // 2, w // 2
+    radius = int(min(crow, ccol) * 0.25)
+    y, x = np.ogrid[:h, :w]
+    mask_high = ((x - ccol)**2 + (y - crow)**2) >= radius**2
+    hf_ratio = np.sum(magnitude[mask_high]) / (np.sum(magnitude) + 1e-8)
+
+    # 4. Laplacian variance → sharpness vs. noise
+    # 4. Laplacian variance → sharpness vs. noise
+    lap_var = cv2.Laplacian(gray.astype(np.uint8), cv2.CV_64F).var()
+
+    # 5. Local signal-to-noise ratio → speckle or poisson
+    mean_intensity = np.mean(gray)
+    std_intensity = np.std(gray)
+    snr = mean_intensity / (std_intensity + 1e-8)
+
+    # 6. Decision logic
+    if hf_ratio > hf_threshold and lap_var > lap_var_threshold:
+        return "gaussian"
+    elif hf_ratio > hf_threshold and lap_var <= lap_var_threshold:
+        return "compression"
+    elif snr < snr_threshold and mean_intensity > 50:
+        return "speckle"
+    elif snr < snr_threshold and mean_intensity <= 50:
+        return "poisson"
+    else:
+        return "unknown"
+
+# Non-local Means
+def remove_noise_nlmeans(img, h=10, templateWindowSize=7, searchWindowSize=21):
+    """
+    Removes Gaussian-like noise preserving textures and edges.
+    """
+    return cv2.fastNlMeansDenoisingColored(img, None, h, h, templateWindowSize, searchWindowSize)
+
+# Bilateral filter
+def remove_noise_bilateral(img, d=9, sigmaColor=75, sigmaSpace=75):
+    """
+    Reduces Gaussian noise while keeping edges sharp.
+    """
+    return cv2.bilateralFilter(img, d, sigmaColor, sigmaSpace)
+
+# Gaussian blur
+def remove_noise_gaussian(img, ksize=5, sigma=1.0):
+    """
+    Reduces mild Gaussian noise with a Gaussian kernel.
+    """
+    return cv2.GaussianBlur(img, (ksize, ksize), sigma)
+
+def evaluate_denoising(denoised, gt):
+    """
+    Computes PSNR and SSIM between denoised image and ground truth.
+    """
+    denoised = denoised.astype(np.uint8)
+    gt = gt.astype(np.uint8)
+
+    p = psnr(gt, denoised, data_range=255)
+    s = ssim(gt, denoised, channel_axis=2)
+    return p, s
+
+def remove_noise_median(img, ksize=3):
+    return cv2.medianBlur(img, ksize)
