@@ -14,7 +14,7 @@ list_gt_img.sort()
 
 THRESHOLD = 40
 
-# Loop over the noisy (or hue changed or unmodified) images of qsd1_w3, along with its ground truth.
+# Loop over the noisy (or hue changed or unmodified) images of qsd1_w3, along with their ground truth.
 for n_img_path, gt_img_path in zip(list_noisy_img, list_gt_img):
     noisy_img = cv2.imread(os.path.join(img_folder_noisy, n_img_path))
     gt_img = cv2.imread(os.path.join(img_folder_gt, gt_img_path))
