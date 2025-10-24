@@ -1,154 +1,144 @@
-#  (LBP + DCT combined)
-
 import os
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
+import pickle
+from scipy.fftpack import dct
 from skimage.feature import local_binary_pattern
 from sklearn.metrics.pairwise import cosine_similarity
-from tqdm import tqdm
+from rtu_noise_filter import fourier_noise_score, remove_noise_median, remove_noise_nlmeans
 
-#  CONFIGURATION
 
-QSD1_PATH = 'data/qsd1_w3/'       # folder with query images
-BBDD_PATH = 'data/bbdd/'          # folder with reference paintings
-GT_PATH   = 'data/qsd1_w3/gt_corresps.pkl' # ground truth indices
 
-# Descriptor parameters
-LBP_P = 8         # neighbors
-LBP_R = 1         # radius
-GRID  = (4, 4)    # grid for spatial LBP
-DCT_N = 64        # number of DCT coefficients
+# CONFIG
 
-# FEATURE EXTRACTORS
+IMG_FOLDER_NOISY = "../Data/Week3/qsd1_w3/"
+IMG_FOLDER_GT = "../Data/Week3/qsd1_w3/non_augmented/"
+#GT_CORRESPS_PATH = os.path.join(IMG_FOLDER_NOISY, "gt_corresps.pkl")
+THRESHOLD = 40
 
-def lbp_descriptor(img, P=8, R=1, grid=(4,4)):
-    """Compute LBP histogram descriptor divided into grid blocks."""
+
+# DESCRIPTOR FUNCTIONS
+
+def compute_lbp_descriptor(img, num_points=8, radius=1, grid_x=4, grid_y=4):
+    """Compute block-based LBP descriptor."""
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    h, w = gray.shape
-    h_step, w_step = h // grid[0], w // grid[1]
-    desc = []
+    lbp = local_binary_pattern(gray, num_points, radius, method='uniform')
+    h, w = lbp.shape
+    block_h, block_w = h // grid_y, w // grid_x
+    histograms = []
+    for i in range(grid_y):
+        for j in range(grid_x):
+            block = lbp[i*block_h:(i+1)*block_h, j*block_w:(j+1)*block_w]
+            hist, _ = np.histogram(block.ravel(),
+                                   bins=np.arange(0, num_points + 3),
+                                   range=(0, num_points + 2))
+            hist = hist.astype("float")
+            hist /= (hist.sum() + 1e-8)
+            histograms.extend(hist)
+    return np.array(histograms)
 
-    for i in range(grid[0]):
-        for j in range(grid[1]):
-            block = gray[i*h_step:(i+1)*h_step, j*w_step:(j+1)*w_step]
-            lbp = local_binary_pattern(block, P, R, method='uniform')
-            hist, _ = np.histogram(lbp.ravel(),
-                                   bins=np.arange(0, P + 3),
-                                   range=(0, P + 2))
-            hist = hist.astype('float')
-            hist /= hist.sum() + 1e-6
-            desc.extend(hist)
-    return np.array(desc, dtype=np.float32)
 
-
-def dct_descriptor(img, N=64):
-    """Compute DCT descriptor using first N coefficients."""
+def compute_dct_descriptor(img, num_coeff=64):
+    """Compute DCT-based descriptor."""
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    gray = cv2.resize(gray, (128, 128))
-    dct = cv2.dct(np.float32(gray))
-    dct_flat = np.abs(dct).flatten()
-    desc = dct_flat[:N]
-    desc /= np.linalg.norm(desc) + 1e-6
-    return desc.astype(np.float32)
+    gray = cv2.resize(gray, (64, 64))
+    dct_coeffs = dct(dct(gray.T, norm='ortho').T, norm='ortho')
+    dct_vector = dct_coeffs.flatten()[:num_coeff]
+    return dct_vector
 
 
-def hybrid_descriptor(img, lbp_weight=0.5, dct_weight=0.5):
-    """Combine normalized LBP + DCT into a single hybrid descriptor."""
-    lbp_desc = lbp_descriptor(img, P=LBP_P, R=LBP_R, grid=GRID)
-    dct_desc = dct_descriptor(img, N=DCT_N)
 
-    # Normalize individually
-    lbp_desc /= np.linalg.norm(lbp_desc) + 1e-6
-    dct_desc /= np.linalg.norm(dct_desc) + 1e-6
+# NOISE PREPROCESSING
 
-    # Weighted concatenation
-    combined = np.concatenate([lbp_weight * lbp_desc,
-                               dct_weight * dct_desc])
-    combined /= np.linalg.norm(combined) + 1e-6
-    return combined
-
-
-# UTILITY FUNCTIONS
-
-def load_images_from_folder(folder):
-    imgs = []
-    for fname in sorted(os.listdir(folder)):
-        if fname.lower().endswith(('.jpg', '.png', '.jpeg')):
-            imgs.append(cv2.imread(os.path.join(folder, fname)))
-    return imgs
+def preprocess_image(img):
+    """Detect noise and denoise if necessary using rtu_noise_filter logic."""
+    noise_score = fourier_noise_score(img, radius_ratio=0.75)
+    if noise_score > THRESHOLD:
+        print(f"Detected noise (score={noise_score:.2f}) → applying denoising filters...")
+        img = remove_noise_median(img, ksize=3)
+        img = remove_noise_nlmeans(img, h=5, templateWindowSize=3, searchWindowSize=21)
+    else:
+        print(f"No significant noise detected (score={noise_score:.2f})")
+    return img
 
 
-def compute_descriptors(imgs, method='hybrid'):
-    descs = []
-    for img in tqdm(imgs, desc=f'Computing {method.upper()} features'):
-        if method == 'lbp':
-            desc = lbp_descriptor(img)
-        elif method == 'dct':
-            desc = dct_descriptor(img)
-        elif method == 'hybrid':
-            desc = hybrid_descriptor(img)
-        else:
-            raise ValueError("method must be 'lbp', 'dct', or 'hybrid'")
-        descs.append(desc)
-    return np.array(descs)
+# DESCRIPTOR EXTRACTION
+
+def extract_descriptors(folder):
+    descriptors = []
+    img_names = sorted([f for f in os.listdir(folder) if f.endswith('.jpg')])
+    for name in img_names:
+        print(f"\nProcessing {name} ...")
+        img_path = os.path.join(folder, name)
+        img = cv2.imread(img_path)
+        if img is None:
+            print(f"⚠️ Skipping {name}: could not read image.")
+            continue
+        processed_img = preprocess_image(img)
+        lbp_desc = compute_lbp_descriptor(processed_img)
+        dct_desc = compute_dct_descriptor(processed_img)
+        combined_desc = np.concatenate([lbp_desc, dct_desc])
+        descriptors.append(combined_desc)
+    return np.array(descriptors), img_names
 
 
-def rank_images(query_desc, db_descs):
-    sims = cosine_similarity([query_desc], db_descs)[0]
-    ranked_idx = np.argsort(-sims)
-    return ranked_idx, sims[ranked_idx]
+# EVALUATION FUNCTIONS
 
+def compute_map_at_k(descriptors_query, descriptors_gt, gt_corresps, k=5):
+    """Compute mean Average Precision at K using GT correspondences (list or dict)."""
+    sims = cosine_similarity(descriptors_query, descriptors_gt)
+    map_scores = []
 
-def evaluate_retrieval(results, gt):
-    correct = 0
-    for i in range(len(gt)):
-        if gt[i][0] in results[i][:1]:
-            correct += 1
-    return correct / len(gt)
+    # Handle both dict and list structures for gt_corresps
+    if isinstance(gt_corresps, list):
+        gt_corresps_dict = {i: gt_corresps[i] for i in range(len(gt_corresps))}
+    else:
+        gt_corresps_dict = gt_corresps
+
+    for i in range(len(descriptors_query)):
+        ranked_indices = np.argsort(-sims[i])[:k]
+        gt_indices = gt_corresps_dict.get(i, [])
+        correct = [1 if idx in gt_indices else 0 for idx in ranked_indices]
+        avg_prec = np.mean(correct[:k]) if np.any(correct) else 0
+        map_scores.append(avg_prec)
+
+    return np.mean(map_scores)
+
 
 
 # MAIN PIPELINE
 
-if __name__ == '__main__':
-    # Load images and ground truth
-    queries = load_images_from_folder(QSD1_PATH)
-    db_imgs = load_images_from_folder(BBDD_PATH)
-    gt = np.load(GT_PATH, allow_pickle=True)
+def main():
+    print("=== TASK 1 + TASK 2 ===")
+    print("Extracting descriptors for query and GT images...\n")
 
-    # Choose method ('lbp', 'dct', 'hybrid')
-    method = 'hybrid'
+    # --- Extract descriptors ---
+    desc_query, query_names = extract_descriptors(IMG_FOLDER_NOISY)
+    desc_gt, gt_names = extract_descriptors(IMG_FOLDER_GT)
 
-    # Compute features
-    db_descs = compute_descriptors(db_imgs, method)
-    query_descs = compute_descriptors(queries, method)
+    # --- Save descriptors ---
+    os.makedirs("results", exist_ok=True)
+    with open("results/descriptors_task1_2.pkl", "wb") as f:
+        pickle.dump({
+            "query_descriptors": desc_query,
+            "gt_descriptors": desc_gt,
+            "query_names": query_names,
+            "gt_names": gt_names
+        }, f)
+    print("\n✅ Descriptors saved to results/descriptors_task1_2.pkl")
 
-    # Retrieval
-    results = []
-    for qdesc in tqdm(query_descs, desc='Retrieving'):
-        ranked_idx, _ = rank_images(qdesc, db_descs)
-        results.append(ranked_idx[:10])
-
-    # Evaluate performance
-    prec1 = evaluate_retrieval(results, gt)
-    print(f"{method.upper()} Precision@1 = {prec1:.3f}")
+    # --- Use direct 1-to-1 mapping with non_augmented folder ---
+    print("\n⚙️ Using 1-to-1 GT mapping (query i ↔ non_augmented i) for Tasks 1 & 2.")
+    gt_corresps = {i: [i] for i in range(len(desc_query))}
 
 
-    # VISUALIZATION
+    # --- Evaluate ---
+    map1 = compute_map_at_k(desc_query, desc_gt, gt_corresps, k=1)
+    map5 = compute_map_at_k(desc_query, desc_gt, gt_corresps, k=5)
+    print(f"\n📊 Evaluation Results:")
+    print(f"   mAP@1 = {map1:.4f}")
+    print(f"   mAP@5 = {map5:.4f}")
 
-    idx = 0  # first query
-    qimg = queries[idx]
-    plt.figure(figsize=(15, 4))
-    plt.subplot(1, 6, 1)
-    plt.imshow(cv2.cvtColor(qimg, cv2.COLOR_BGR2RGB))
-    plt.title("Query")
-    plt.axis('off')
 
-    for i in range(5):
-        match_idx = results[idx][i]
-        plt.subplot(1, 6, i+2)
-        plt.imshow(cv2.cvtColor(db_imgs[match_idx], cv2.COLOR_BGR2RGB))
-        plt.title(f"Top {i+1}")
-        plt.axis('off')
-    plt.tight_layout()
-    plt.show()
+if __name__ == "__main__":
+    main()
