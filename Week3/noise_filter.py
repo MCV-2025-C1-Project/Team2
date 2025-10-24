@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
-from skimage.metrics import peak_signal_noise_ratio as psnr
+from skimage.metrics import mean_squared_error as mse
 from skimage.metrics import structural_similarity as ssim
 
 def fourier_noise_score(img, radius_ratio=0.25, normalize=True, scale=100):
@@ -170,14 +170,36 @@ def remove_noise_gaussian(img, ksize=5, sigma=1.0):
 
 def evaluate_denoising(denoised, gt):
     """
-    Computes PSNR and SSIM between denoised image and ground truth.
+    Computes MSE and SSIM between denoised image and its ground truth.
     """
     denoised = denoised.astype(np.uint8)
     gt = gt.astype(np.uint8)
 
-    p = psnr(gt, denoised, data_range=255)
+    m = mse(gt, denoised)
     s = ssim(gt, denoised, channel_axis=2)
-    return p, s
+    return m, s
+
+def mse_to_psnr(mse_value, max_pixel_value=255):
+    """
+    Converts Mean Squared Error (MSE) to Peak Signal-to-Noise Ratio (PSNR).
+
+    Parameters
+    ----------
+    mse_value : float
+        Mean Squared Error between two images.
+    max_pixel_value : int, optional
+        Maximum possible pixel value (default 255 for 8-bit images).
+
+    Returns
+    -------
+    psnr_value : float
+        PSNR value in decibels (dB).
+    """
+    if mse_value == 0:
+        return float('inf')  # perfect match → infinite PSNR
+    
+    psnr_value = 10 * np.log10((max_pixel_value ** 2) / mse_value)
+    return psnr_value
 
 def remove_noise_median(img, ksize=3):
     return cv2.medianBlur(img, ksize)

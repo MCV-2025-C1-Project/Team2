@@ -10,8 +10,8 @@ from tqdm import tqdm
 
 #  CONFIGURATION
 
-QSD1_PATH = 'data/qsd1_w3/'       # folder with query images
-BBDD_PATH = 'data/bbdd/'          # folder with reference paintings
+QSD1_PATH = 'Data/Week3/qsd1_w3/'       # folder with query images
+BBDD_PATH = 'Data/Week3/bbdd/'          # folder with reference paintings
 GT_PATH   = 'data/qsd1_w3/gt.npy' # ground truth indices
 
 # Descriptor parameters
