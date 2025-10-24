@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 QSD1_PATH = 'data/qsd1_w3/'       # folder with query images
 BBDD_PATH = 'data/bbdd/'          # folder with reference paintings
-GT_PATH   = 'data/qsd1_w3/gt.npy' # ground truth indices
+GT_PATH   = 'data/qsd1_w3/gt_corresps.pkl' # ground truth indices
 
 # Descriptor parameters
 LBP_P = 8         # neighbors
