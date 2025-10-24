@@ -13,7 +13,7 @@ from rtu_noise_filter import fourier_noise_score, remove_noise_median, remove_no
 
 IMG_FOLDER_NOISY = "../Data/Week3/qsd1_w3/"
 IMG_FOLDER_GT = "../Data/Week3/qsd1_w3/non_augmented/"
-#GT_CORRESPS_PATH = os.path.join(IMG_FOLDER_NOISY, "gt_corresps.pkl")
+GT_CORRESPS_PATH = os.path.join(IMG_FOLDER_NOISY, "gt_corresps.pkl")
 THRESHOLD = 40
 
 
