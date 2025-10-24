@@ -82,62 +82,6 @@ def extract_descriptors(folder):
     return np.array(descriptors), img_names
 
 
-# EVALUATION FUNCTIONS
-
-def compute_map_at_k(descriptors_query, descriptors_gt, gt_corresps, k=5):
-    """Compute mean Average Precision at K using GT correspondences (list or dict)."""
-    sims = cosine_similarity(descriptors_query, descriptors_gt)
-    map_scores = []
-
-    # Handle both dict and list structures for gt_corresps
-    if isinstance(gt_corresps, list):
-        gt_corresps_dict = {i: gt_corresps[i] for i in range(len(gt_corresps))}
-    else:
-        gt_corresps_dict = gt_corresps
-
-    for i in range(len(descriptors_query)):
-        ranked_indices = np.argsort(-sims[i])[:k]
-        gt_indices = gt_corresps_dict.get(i, [])
-        correct = [1 if idx in gt_indices else 0 for idx in ranked_indices]
-        avg_prec = np.mean(correct[:k]) if np.any(correct) else 0
-        map_scores.append(avg_prec)
-
-    return np.mean(map_scores)
-
-
-
-# MAIN PIPELINE
-
-def main():
-    print("=== TASK 1 + TASK 2 ===")
-    print("Extracting descriptors for query and GT images...\n")
-
-    # --- Extract descriptors ---
-    desc_query, query_names = extract_descriptors(IMG_FOLDER_NOISY)
-    desc_gt, gt_names = extract_descriptors(IMG_FOLDER_GT)
-
-    # --- Save descriptors ---
-    os.makedirs("results", exist_ok=True)
-    with open("results/descriptors_task1_2.pkl", "wb") as f:
-        pickle.dump({
-            "query_descriptors": desc_query,
-            "gt_descriptors": desc_gt,
-            "query_names": query_names,
-            "gt_names": gt_names
-        }, f)
-    print("\n✅ Descriptors saved to results/descriptors_task1_2.pkl")
-
-    # --- Use direct 1-to-1 mapping with non_augmented folder ---
-    print("\n⚙️ Using 1-to-1 GT mapping (query i ↔ non_augmented i) for Tasks 1 & 2.")
-    gt_corresps = {i: [i] for i in range(len(desc_query))}
-
-
-    # --- Evaluate ---
-    map1 = compute_map_at_k(desc_query, desc_gt, gt_corresps, k=1)
-    map5 = compute_map_at_k(desc_query, desc_gt, gt_corresps, k=5)
-    print(f"\n📊 Evaluation Results:")
-    print(f"   mAP@1 = {map1:.4f}")
-    print(f"   mAP@5 = {map5:.4f}")
 
 
 if __name__ == "__main__":
