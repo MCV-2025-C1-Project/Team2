@@ -6,10 +6,13 @@ from skimage.feature import local_binary_pattern
 from scipy.fftpack import dct
 from rtu_noise_filter import fourier_noise_score, remove_noise_median, remove_noise_nlmeans
 import matplotlib.pyplot as plt
+from sklearn.metrics.pairwise import cosine_similarity
 
 # CONFIG
 IMG_FOLDER_NOISY = "../Data/Week3/qsd1_w3/"
-IMG_FOLDER_GT = "../Data/Week3/qsd1_w3/non_augmented/"
+#IMG_FOLDER_GT = "../Data/BBDD/"
+IMG_FOLDER_GT = "../Data/Week3/qsd1_w3/non_augmented"
+GT_CORRESPS_PATH = "../Data/Week3/qsd1_w3/gt_corresps.pkl"
 THRESHOLD = 40
 SHOW_EXAMPLES = False  # Set to True to visualize noisy vs denoised images
 
@@ -74,7 +77,7 @@ def compute_dct_descriptor(img, num_coeff=64):
 
 # Descriptor extraction
 
-def extract_descriptors(folder, multiscale_lbp=True):
+def extract_descriptors(folder, preprocess=False, multiscale_lbp=True):
     descriptors = []
     img_names = sorted([f for f in os.listdir(folder) if f.endswith('.jpg')])
 
@@ -85,11 +88,11 @@ def extract_descriptors(folder, multiscale_lbp=True):
         if img is None:
             print(f"⚠️ Skipping {name}: could not read image.")
             continue
+        if preprocess:
+            img = preprocess_image(img)
 
-        processed_img = preprocess_image(img)
-
-        lbp_desc = compute_lbp_descriptor(processed_img, multiscale=multiscale_lbp)
-        dct_desc = compute_dct_descriptor(processed_img)
+        lbp_desc = compute_lbp_descriptor(img, multiscale=multiscale_lbp)
+        dct_desc = compute_dct_descriptor(img)
         combined_desc = np.concatenate([lbp_desc, dct_desc])
 
         descriptors.append(combined_desc)
@@ -97,9 +100,7 @@ def extract_descriptors(folder, multiscale_lbp=True):
     return np.array(descriptors), img_names
 
 
-# Evaluation
-
-from sklearn.metrics.pairwise import cosine_similarity
+# Evaluations
 
 def compute_map_at_k(descriptors_query, descriptors_gt, gt_corresps, k=5):
     """Compute mean Average Precision at K using GT correspondences."""
@@ -133,8 +134,8 @@ def compute_map_at_k(descriptors_query, descriptors_gt, gt_corresps, k=5):
 
 def main():
 
-    desc_query, query_names = extract_descriptors(IMG_FOLDER_NOISY)
-    desc_gt, gt_names = extract_descriptors(IMG_FOLDER_GT)
+    desc_query, query_names = extract_descriptors(IMG_FOLDER_NOISY, preprocess=False)
+    desc_gt, gt_names = extract_descriptors(IMG_FOLDER_GT, preprocess=False)
 
     os.makedirs("results", exist_ok=True)
     with open("results/descriptors_task1_2.pkl", "wb") as f:
@@ -146,9 +147,12 @@ def main():
         }, f)
     print("\n Descriptors saved to results/descriptors.pkl")
 
-    
-    gt_corresps = {i: [i] for i in range(len(desc_query))}
+    #gt_corresps = {i: [i] for i in range(len(desc_query))}
 
+    # Charge pkl file for gt correspondances with the BBDD folder
+    with open(GT_CORRESPS_PATH, "rb") as f:
+        gt_corresps = pickle.load(f)
+        
     map1 = compute_map_at_k(desc_query, desc_gt, gt_corresps, k=1)
     map5 = compute_map_at_k(desc_query, desc_gt, gt_corresps, k=5)
 
