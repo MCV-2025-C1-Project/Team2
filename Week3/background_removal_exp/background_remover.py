@@ -330,9 +330,13 @@ def remove_background_morphological_gradient(im, thr=20, pixel_border=15, gradie
     """
 
 
+
+
     # ======================================================
     # 🔹 SEGUNDA FASE: ELIMINAR SOMBRAS
     # ======================================================
+
+    NEARITY = 20  # Máximo número de píxeles "1s" que atravesamos antes de rendirnos
 
     scale = 1 # zoom in (mayor que 1)
     poly_mask = poly_mask.astype(np.uint8)
@@ -360,6 +364,15 @@ def remove_background_morphological_gradient(im, thr=20, pixel_border=15, gradie
     shadows_candidates = np.zeros_like(poly_mask, dtype=np.int32)
     current_label = 1
 
+    def is_cluster_in_upper_third(region, h):
+        """Verifica si todos los píxeles del cluster están en el tercio superior."""
+        coords = np.argwhere(region)
+        if len(coords) == 0:
+            return False
+        max_y = np.max(coords[:, 0])
+        upper_limit = h // 3
+        return max_y < upper_limit
+
     def process_seed_and_label(r, c):
         nonlocal current_label
         if r < 0 or r >= h or c < 0 or c >= w:
@@ -373,15 +386,25 @@ def remove_background_morphological_gradient(im, thr=20, pixel_border=15, gradie
         if region_size < 100:
             return
         
+        # Filtrar clusters completamente en el tercio superior
+        if is_cluster_in_upper_third(region, h):
+            return
+        
         shadows_candidates[region] = current_label
         current_label += 1
 
     # LEFT
     for r in range(h):
         state = 0  # 0 = esperando gradiente, 1 = dentro de gradiente
+        gradient_count = 0
         for x in range(w):
             if grad_bin[r, x] > 0 and state == 0:
                 state = 1  # hemos entrado en zona de gradiente
+                gradient_count = 1
+            elif grad_bin[r, x] > 0 and state == 1:
+                gradient_count += 1
+                if gradient_count > NEARITY:
+                    break  # nos rendimos
             elif grad_bin[r, x] == 0 and state == 1:
                 # hemos salido de la zona de gradiente: 0-(1s)-0 detectado
                 process_seed_and_label(r, x)
@@ -390,9 +413,15 @@ def remove_background_morphological_gradient(im, thr=20, pixel_border=15, gradie
     # RIGHT
     for r in range(h):
         state = 0
+        gradient_count = 0
         for x in range(w - 1, -1, -1):
             if grad_bin[r, x] > 0 and state == 0:
                 state = 1
+                gradient_count = 1
+            elif grad_bin[r, x] > 0 and state == 1:
+                gradient_count += 1
+                if gradient_count > NEARITY:
+                    break
             elif grad_bin[r, x] == 0 and state == 1:
                 process_seed_and_label(r, x)
                 break
@@ -400,9 +429,15 @@ def remove_background_morphological_gradient(im, thr=20, pixel_border=15, gradie
     # TOP
     for c in range(w):
         state = 0
+        gradient_count = 0
         for y in range(h):
             if grad_bin[y, c] > 0 and state == 0:
                 state = 1
+                gradient_count = 1
+            elif grad_bin[y, c] > 0 and state == 1:
+                gradient_count += 1
+                if gradient_count > NEARITY:
+                    break
             elif grad_bin[y, c] == 0 and state == 1:
                 process_seed_and_label(y, c)
                 break
@@ -410,12 +445,31 @@ def remove_background_morphological_gradient(im, thr=20, pixel_border=15, gradie
     # BOTTOM
     for c in range(w):
         state = 0
+        gradient_count = 0
         for y in range(h - 1, -1, -1):
             if grad_bin[y, c] > 0 and state == 0:
                 state = 1
+                gradient_count = 1
+            elif grad_bin[y, c] > 0 and state == 1:
+                gradient_count += 1
+                if gradient_count > NEARITY:
+                    break
             elif grad_bin[y, c] == 0 and state == 1:
                 process_seed_and_label(y, c)
                 break
+
+    # ========== FUNCIÓN AUXILIAR PARA VERIFICAR AGUJEROS ==========
+    def cluster_has_holes(cluster_mask):
+        """Verifica si un cluster tiene agujeros (regiones de 0s rodeadas por 1s)."""
+        # Invertir la máscara
+        inverted = (~cluster_mask.astype(bool)).astype(np.uint8)
+        
+        # Etiquetar componentes conectadas en la máscara invertida
+        num_labels, labels = cv2.connectedComponents(inverted, connectivity=8)
+        
+        # Si hay más de 2 componentes (background exterior + al menos un agujero), tiene agujeros
+        # num_labels incluye el background (0), así que si > 2 hay agujeros
+        return num_labels > 2
 
     # ========== SECCIÓN FÁCILMENTE COMENTABLE: FILTRADO POR DIÁMETROS ==========
     # Calcular diámetros máximos de poly_mask
@@ -443,6 +497,9 @@ def remove_background_morphological_gradient(im, thr=20, pixel_border=15, gradie
         meets_V = cluster_V >= (3/5) * Vm
         meets_H = cluster_H >= (3/5) * Hm
         
+        # Verificar si el cluster tiene agujeros
+        has_holes = cluster_has_holes(cluster_mask)
+        
         # Debe cumplir al menos uno de los dos
         if not (meets_V or meets_H):
             shadows_candidates[cluster_mask] = 0
@@ -460,10 +517,202 @@ def remove_background_morphological_gradient(im, thr=20, pixel_border=15, gradie
                 shadows_candidates2[cluster_mask] = 0
         elif meets_V and meets_H:
             shadows_candidates[cluster_mask] = 0
+        
+        # Si el cluster tiene agujeros, no pasa a shadows_candidates (CF)
+        # pero se queda en shadows_candidates2 (C)
+        if has_holes:
+            shadows_candidates[cluster_mask] = 0
     # ========== FIN SECCIÓN COMENTABLE ==========
 
     print(np.unique(grad_bin))
     print(np.unique(shadows_candidates))
+
+    # ========== FUNCIONES AUXILIARES PARA ALGORITMO FINAL ==========
+    def find_background_cluster(clusters_map):
+        """Detecta si existe un cluster que toca el borde de la imagen."""
+        h, w = clusters_map.shape
+        unique_labels = np.unique(clusters_map)
+        unique_labels = unique_labels[unique_labels > 0]
+        
+        for label in unique_labels:
+            cluster_mask = (clusters_map == label)
+            # Verificar si toca algún borde
+            if (np.any(cluster_mask[0, :]) or np.any(cluster_mask[-1, :]) or 
+                np.any(cluster_mask[:, 0]) or np.any(cluster_mask[:, -1])):
+                return label
+        return None
+
+    def find_max_interior_quadrilateral(cluster_mask, original_mask, start_point=None):
+        """
+        Encuentra el cuadrilátero de área máxima contenido en el agujero de un cluster.
+        Si start_point es None, usa el centro de la imagen.
+        """
+        h, w = cluster_mask.shape
+        
+        # Invertir el cluster para que el agujero sea 1 y el cluster sea 0
+        hole_mask = (~cluster_mask.astype(bool)).astype(np.uint8)
+        hole_mask = hole_mask & original_mask  # Intersección con máscara original
+        
+        if start_point is None:
+            # Usar centro de la imagen
+            center_y, center_x = h // 2, w // 2
+        else:
+            center_y, center_x = start_point
+        
+        # Verificar que el punto de inicio está en el agujero
+        if not hole_mask[center_y, center_x]:
+            # Si no está en el agujero, buscar el punto más cercano que sí esté
+            coords = np.argwhere(hole_mask > 0)
+            if len(coords) == 0:
+                return np.zeros((h, w), dtype=np.uint8)
+            distances = np.sum((coords - np.array([center_y, center_x]))**2, axis=1)
+            closest = coords[np.argmin(distances)]
+            center_y, center_x = closest[0], closest[1]
+        
+        # Expandir desde el centro hacia los bordes
+        # Buscar extremos en cada dirección dentro del agujero
+        left = center_x
+        while left > 0 and hole_mask[center_y, left - 1]:
+            left -= 1
+        
+        right = center_x
+        while right < w - 1 and hole_mask[center_y, right + 1]:
+            right += 1
+        
+        top = center_y
+        while top > 0 and hole_mask[top - 1, center_x]:
+            top -= 1
+        
+        bottom = center_y
+        while bottom < h - 1 and hole_mask[bottom + 1, center_x]:
+            bottom += 1
+        
+        # Ahora expandir el rectángulo completo
+        # Buscar el rectángulo máximo que cabe en el agujero
+        while left > 0:
+            can_expand = True
+            for y in range(top, bottom + 1):
+                if not hole_mask[y, left - 1]:
+                    can_expand = False
+                    break
+            if can_expand:
+                left -= 1
+            else:
+                break
+        
+        while right < w - 1:
+            can_expand = True
+            for y in range(top, bottom + 1):
+                if not hole_mask[y, right + 1]:
+                    can_expand = False
+                    break
+            if can_expand:
+                right += 1
+            else:
+                break
+        
+        while top > 0:
+            can_expand = True
+            for x in range(left, right + 1):
+                if not hole_mask[top - 1, x]:
+                    can_expand = False
+                    break
+            if can_expand:
+                top -= 1
+            else:
+                break
+        
+        while bottom < h - 1:
+            can_expand = True
+            for x in range(left, right + 1):
+                if not hole_mask[bottom + 1, x]:
+                    can_expand = False
+                    break
+            if can_expand:
+                bottom += 1
+            else:
+                break
+        
+        # Crear máscara del cuadrilátero
+        result_mask = np.zeros((h, w), dtype=np.uint8)
+        result_mask[top:bottom+1, left:right+1] = 1
+        
+        return result_mask
+
+    def combine_cluster_masks(clusters_map):
+        """Combina todos los clusters en una sola máscara."""
+        return (clusters_map > 0).astype(np.uint8)
+
+    # ========== ALGORITMO PRINCIPAL ==========
+    C = shadows_candidates2  # Clusters originales
+    CF = shadows_candidates  # Clusters filtrados
+
+    # Paso 1: Buscar cluster background en C
+    bg_cluster_label = find_background_cluster(C)
+
+    # Contar clusters en C y CF
+    unique_C = np.unique(C)
+    unique_C = unique_C[unique_C > 0]
+    num_clusters_C = len(unique_C)
+
+    unique_CF = np.unique(CF)
+    unique_CF = unique_CF[unique_CF > 0]
+    num_clusters_CF = len(unique_CF)
+
+    print(f"DEBUG: Background cluster: {bg_cluster_label}")
+    print(f"DEBUG: Num clusters C: {num_clusters_C}, CF: {num_clusters_CF}")
+
+    # Paso 2 y 3: Si no existe cluster background
+    if bg_cluster_label is None:
+        print("DEBUG: Caso 2-3: No hay cluster background, final_mask = máscara original")
+        final_mask = poly_mask.copy()
+    else:
+        # Paso 4: Existe cluster background
+        # Paso 5: Si es el único cluster en C
+        if num_clusters_C == 1:
+            print("DEBUG: Caso 5: Solo cluster background, final_mask = cuadrilátero máximo interior")
+            bg_mask = (C == bg_cluster_label).astype(bool)
+            final_mask = find_max_interior_quadrilateral(bg_mask, poly_mask)
+        # Paso 6: Más de un cluster en C pero NO hay clusters en CF
+        elif num_clusters_C > 1 and num_clusters_CF == 0:
+            print("DEBUG: Caso 6: Múltiples clusters en C, ninguno en CF")
+            # Combinar todos los clusters
+            all_clusters_mask = combine_cluster_masks(C).astype(bool)
+            
+            # Intentar encontrar cuadrilátero desde el centro
+            h, w = poly_mask.shape
+            center = (h // 2, w // 2)
+            
+            # Verificar si el centro está en un cluster
+            if C[center[0], center[1]] > 0:
+                print("DEBUG: Centro está en un cluster, usar cuadrilátero de background")
+                bg_mask = (C == bg_cluster_label).astype(bool)
+                final_mask = find_max_interior_quadrilateral(bg_mask, poly_mask)
+            else:
+                # Buscar submáscara desde el centro
+                candidate_mask = find_max_interior_quadrilateral(all_clusters_mask, poly_mask, center)
+                
+                # Verificar si contiene al menos 70% del área original
+                area_original = np.sum(poly_mask)
+                area_candidate = np.sum(candidate_mask)
+                
+                if area_candidate >= 0.7 * area_original:
+                    print(f"DEBUG: Submáscara válida ({area_candidate/area_original*100:.1f}% del área)")
+                    final_mask = candidate_mask
+                else:
+                    print(f"DEBUG: Submáscara muy pequeña ({area_candidate/area_original*100:.1f}%), usar background")
+                    bg_mask = (C == bg_cluster_label).astype(bool)
+                    final_mask = find_max_interior_quadrilateral(bg_mask, poly_mask)
+        # Paso 7: CF tiene exactamente un cluster
+        elif num_clusters_CF == 1:
+            print("DEBUG: Caso 7: Un cluster en CF, cuadrilátero máximo interior")
+            cf_label = unique_CF[0]
+            cf_mask = (CF == cf_label).astype(bool)
+            final_mask = find_max_interior_quadrilateral(cf_mask, poly_mask)
+        else:
+            # Caso no definido: imagen toda blanca
+            print("DEBUG: Caso no definido, final_mask = todo blanco")
+            final_mask = np.ones((h, w), dtype=np.uint8)
 
     # Convertir shadows_candidates a visualización RGBA
     unique_labels = np.unique(shadows_candidates)
@@ -484,10 +733,7 @@ def remove_background_morphological_gradient(im, thr=20, pixel_border=15, gradie
     # Reemplazamos shadows_candidates por la versión RGBA visualizable
     shadows_candidates = shadows_candidates_rgba
 
-
-    
-    
-    # Convertir shadows_candidates a visualización RGBA
+    # Convertir shadows_candidates2 a visualización RGBA
     unique_labels = np.unique(shadows_candidates2)
     unique_labels = unique_labels[unique_labels > 0]  # excluir el 0 (fondo)
 
@@ -503,106 +749,7 @@ def remove_background_morphological_gradient(im, thr=20, pixel_border=15, gradie
         shadows_candidates_rgba[mask_label, :3] = colors[i]  # RGB
         shadows_candidates_rgba[mask_label, 3] = 255  # Alpha (opaco)
 
-    # Reemplazamos shadows_candidates por la versión RGBA visualizable
+    # Reemplazamos shadows_candidates2 por la versión RGBA visualizable
     shadows_candidates2 = shadows_candidates_rgba
 
-
-
-
-
-    return ret1, ret2, ret3, ret4, grad_bin, shadows_candidates, shadows_candidates2
-
-
-
-
-    """
-
-    # ======================================================
-    # 🔹 WATERSHED sobre gradiente para generar clusters conectados
-    # ======================================================
-
-
-
-
-    # Usamos el gradiente inverso: las zonas de bajo gradiente son "valles"
-    grad_norm = np.where(grad_norm > np.max(grad_norm)*0.075, np.max(grad_norm), 0)
-    grad_inv = grad_norm
-    
-
-    # Suavizado leve para evitar semillas ruidosas
-    #grad_smooth = cv2.GaussianBlur(grad_inv, (5, 5), 0)
-    grad_smooth = grad_inv
-
-    # Detectar marcadores: píxeles de mínimo gradiente local
-    local_min = ndimage.minimum_filter(grad_smooth, size=5)
-    markers = (grad_smooth == local_min).astype(np.uint8) 
-
-    # Etiquetar marcadores
-    num_markers, markers_labeled = cv2.connectedComponents(markers)
-    markers_labeled = markers_labeled.astype(np.int32)  # ✅ requerido por watershed
-
-    # Aplicar watershed sobre el gradiente original
-    grad_for_ws = cv2.cvtColor(grad_norm, cv2.COLOR_GRAY2BGR)
-    markers_ws = cv2.watershed(grad_for_ws, markers_labeled)
-
-    # Convertir resultado a mapa de clusters (sin bordes negativos)
-    cluster_map = np.where(markers_ws > 0, markers_ws, 0)
-    cluster_map = markers_ws
-
-    print("Número de clusters: ", len(np.unique(cluster_map)))
-
-    original_cluster_map = cluster_map.copy()
-
-    # ======================================================
-    # 🔹 Aplicar noise reduction a los clusters y filtrar por poly_mask
-    # ======================================================
-    
-
-    kernelop = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-    kernelcl = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-    perc_pixel_thr = 0.9  # umbral mínimo de pixeles dentro de la máscara
-    final_cluster_map = np.zeros_like(cluster_map)
-    next_final_id = 0
-
-    for cid in np.unique(cluster_map):
-        if cid <= 0:
-            continue  # ignorar fondo o bordes
-        
-        mask = (cluster_map == cid).astype(np.uint8)
-
-        # -------------------------------
-        # 🔹 Noise reduction (morphological opening and closing)
-        # -------------------------------
-        
-        mask_opened = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernelop)
-        mask_closed = cv2.morphologyEx(mask_opened, cv2.MORPH_CLOSE, kernelcl)
-
-        if np.sum(mask_closed) == 0:
-            continue  # todo eliminado por opening
-            
-        mask = mask_opened
-        
-
-
-
-
-
-        # -------------------------------
-        # 🔹 Filtrar clusters según porcentaje dentro de poly_mask
-        # -------------------------------
-        inside_mask_pixels = np.sum(mask & (poly_mask > 0))
-        total_pixels = np.sum(mask)
-        inside_ratio = inside_mask_pixels / total_pixels
-
-        if inside_ratio >= perc_pixel_thr:
-            final_cluster_map[mask > 0] = next_final_id
-            next_final_id += 1
-
-        
-
-    # Reemplazar mapa final
-    cluster_map = final_cluster_map
-    """
-    
-    #return ret1, ret2, ret3, ret4, cluster_map, original_cluster_map, grad_norm
-    
+    return ret1, ret2, ret3, ret4, grad_bin, shadows_candidates, shadows_candidates2, final_mask
