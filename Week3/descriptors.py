@@ -147,11 +147,11 @@ def main():
         }, f)
     print("\n Descriptors saved to results/descriptors.pkl")
 
-    #gt_corresps = {i: [i] for i in range(len(desc_query))}
+    gt_corresps = {i: [i] for i in range(len(desc_query))}
 
     # Charge pkl file for gt correspondances with the BBDD folder
-    with open(GT_CORRESPS_PATH, "rb") as f:
-        gt_corresps = pickle.load(f)
+    #with open(GT_CORRESPS_PATH, "rb") as f:
+        #gt_corresps = pickle.load(f)
         
     map1 = compute_map_at_k(desc_query, desc_gt, gt_corresps, k=1)
     map5 = compute_map_at_k(desc_query, desc_gt, gt_corresps, k=5)

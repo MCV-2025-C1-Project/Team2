@@ -69,7 +69,7 @@ def analyze_noise(noisy, clean):
     std = np.std(noise)
     min_val, max_val = np.min(noise), np.max(noise)
     
-    plt.hist(noise.ravel(), bins=100, range=(-50,50))
+    plt.hist(noise.ravel())
     plt.title("Noise distribution")
     plt.show()
     
