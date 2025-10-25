@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 from skimage.feature import local_binary_pattern
 from scipy.fftpack import dct
-from rtu_noise_filter import fourier_noise_score, remove_noise_median, remove_noise_nlmeans
+from rtu_noise_filter import fourier_noise_score, remove_noise_median, remove_noise_nlmeans, remove_noise_bilateral
 import matplotlib.pyplot as plt
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -25,7 +25,8 @@ def preprocess_image(img, show_examples=SHOW_EXAMPLES):
 
     if noise_score > THRESHOLD:
         denoised_img = remove_noise_median(img, ksize=3)
-        denoised_img = remove_noise_nlmeans(denoised_img, h=5, templateWindowSize=3, searchWindowSize=21)
+        #denoised_img = remove_noise_nlmeans(denoised_img, h=5, templateWindowSize=3, searchWindowSize=21)
+        denoised_img = remove_noise_bilateral(denoised_img, d=21, sigmaColor=25, sigmaSpace=50)
 
         if show_examples:
             fig, axes = plt.subplots(1, 2, figsize=(10,5))
