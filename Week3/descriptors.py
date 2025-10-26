@@ -10,8 +10,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 # CONFIG
 IMG_FOLDER_NOISY = "../Data/Week3/qsd1_w3/"
-#IMG_FOLDER_GT = "../Data/BBDD/"
-IMG_FOLDER_GT = "../Data/Week3/qsd1_w3/non_augmented"
+IMG_FOLDER_GT = "../Data/Week3/BBDD/"
+#IMG_FOLDER_GT = "../Data/Week3/qsd1_w3/non_augmented"
 GT_CORRESPS_PATH = "../Data/Week3/qsd1_w3/gt_corresps.pkl"
 THRESHOLD = 40
 SHOW_EXAMPLES = False  # Set to True to visualize noisy vs denoised images
@@ -151,8 +151,8 @@ def main():
     gt_corresps = {i: [i] for i in range(len(desc_query))}
 
     # Charge pkl file for gt correspondances with the BBDD folder
-    #with open(GT_CORRESPS_PATH, "rb") as f:
-        #gt_corresps = pickle.load(f)
+    with open(GT_CORRESPS_PATH, "rb") as f:
+        gt_corresps = pickle.load(f)
         
     map1 = compute_map_at_k(desc_query, desc_gt, gt_corresps, k=1)
     map5 = compute_map_at_k(desc_query, desc_gt, gt_corresps, k=5)
