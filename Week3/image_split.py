@@ -28,13 +28,6 @@ def split_image_at_valley(image, valleys):
         return (left_artwork, right_artwork)
     return image
 
-def fit_polynomial(variances, degree=5):
-    """Fit a polynomial to the smoothed variance."""
-    x = np.arange(len(variances))
-    coeffs = np.polyfit(x, variances, degree)
-    poly = np.poly1d(coeffs)
-    return poly(x)
-
 def split_images(img):
     """Encapsula la lógica de detección y separación de imágenes.
        Devuelve (valleys, imagen_o_tupla)
