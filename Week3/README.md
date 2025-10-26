@@ -53,14 +53,12 @@ Core functions are implemented in `background_remover.py`.
 
 ## Complete Pipeline
 
-`task4_evaluation.py` combines the background removal system with the image retrieval method to handle images with at most two artworks per image, containing backgrounds.  
+`retrieval_system.ipynb` combines the background removal system with the image retrieval method to handle images with at most two artworks per image, containing backgrounds.  
 Running this script produces the evaluation metrics for the **development test**.
 
 ## Result Submission
 
-`task5.py` contains the functions required to:
-- Create the **submission masks**.  
-- Generate the **pickle file** for **QST2-W2**.
+`retrieval_system_qst1.ipynb` and `retrieval_system_qst2.ipynb` contain the functions required to generate the **pickle file** for **QST1-W2** and **QST2-W2**, respectively.
 
 ## Notes
 
