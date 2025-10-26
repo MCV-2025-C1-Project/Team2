@@ -593,36 +593,33 @@ def remove_shadows_and_refine(poly_mask, grad_norm):
 
         if has_holes:
             shadows_candidates[cluster_mask] = 0
-
-
-
+            shadows_candidates2[cluster_mask] = 0
+            
+            
     # Ensure background cluster exists in shadows_candidates2 before creating C
     bg_exists = find_background_cluster(shadows_candidates2)
     if bg_exists is None:
         print("[DEBUG] No background cluster found. Creating one via border flooding.")
         # Use bottom-right corner as seed (most likely to be background)
         seed_r, seed_c = h - 1, w - 1
-        """
-        # If seed is not valid (not in zero_mask), search backwards from bottom-right
-        if not zero_mask[seed_r, seed_c]:
-            seed_found = False
-            # Search from bottom-right going left then up
-            for r in range(h - 1, -1, -1):
-                for c in range(w - 1, -1, -1):
-                    if zero_mask[r, c]:
-                        seed_r, seed_c = r, c
-                        seed_found = True
-                        break
-                if seed_found:
-                    break
-        """
         
-        # Reuse the existing process_seed_and_label_local function
         if zero_mask[seed_r, seed_c]:
-            print(f"[DEBUG] Processing border seed at ({seed_r}, {seed_c}).")
-            process_seed_and_label_local(seed_r, seed_c)
+            print(f"[DEBUG] Border seed at ({seed_r}, {seed_c}). Performing flood fill.")
+            region = segmentation.flood(zero_mask, (seed_r, seed_c), connectivity=1)
+            region_size = np.sum(region)
+            
+            if region_size >= 100:  # Same size threshold
+                if not is_cluster_in_upper_third(region, poly_mask):
+                    shadows_candidates2[region] = current_label
+                    print(f"[DEBUG] Background cluster created with label {current_label}, size {region_size}")
+                    current_label += 1
+                else:
+                    print(f"[DEBUG] Border region in upper third. Not creating background cluster.")
+            else:
+                print(f"[DEBUG] Border region too small ({region_size} pixels). Not creating background cluster.")
         else:
             print("[DEBUG] No valid zero_mask pixel found for background cluster.")
+
 
     # Algorithm decisions to create final_mask (keeps original branching logic)
     C = shadows_candidates2
@@ -782,7 +779,7 @@ def remove_background_morphological_gradient(im, thr=20, pixel_border=15, gradie
     grad_bin, shadows_candidates_viz, shadows_candidates2_viz, final_mask = remove_shadows_and_refine(poly_mask, grad_norm)
 
     # Final return (keeps original return order)
-    return ret1, ret2, ret3, ret4, grad_bin, shadows_candidates_viz, shadows_candidates2_viz, final_mask
+    #return ret1, ret2, ret3, ret4, grad_bin, shadows_candidates_viz, shadows_candidates2_viz, final_mask
 
 
     return ret1, final_mask, im*final_mask[:, :, np.newaxis], None
