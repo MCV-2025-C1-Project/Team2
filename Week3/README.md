@@ -41,7 +41,8 @@ This task implements and evaluates several **texture descriptors** for image ret
 - `descriptors.py` contains all core functions for descriptor extraction, combination, and evaluation.  
 - `extract_descriptors()` allows selecting descriptors (`lbp`, `dct`, `lbp+dct`, `all`) and applying optional noise removal.  
 - `compute_map_at_k()` computes mAP for retrieval evaluation.  
-- All experiments automatically save results in `results/` for reproducibility.  
+- All experiments automatically save results in `results/` for reproducibility.
+- Run `experiments_task2_full.ipynb` to see all the experiments that are implemented.
 
 ## Painting detection and background removal
 
