@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 from skimage.feature import local_binary_pattern
 from scipy.fftpack import dct
-from rtu_noise_filter import fourier_noise_score, remove_noise_median, remove_noise_nlmeans, remove_noise_bilateral
+from noise_filter import fourier_noise_score, remove_noise_median, remove_noise_nlmeans, remove_noise_bilateral
 import matplotlib.pyplot as plt
 from sklearn.metrics.pairwise import cosine_similarity
 
