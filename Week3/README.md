@@ -2,47 +2,39 @@
 
 This week’s tasks are organized into four main groups, each corresponding to a primary file:
 
-- **Task 1 & 2:** New histogram types and methods  
-  _Main file:_ `new_histogram_types.ipynb`  
-- **Task 3 & 4:** Background removal system  
+- **Task 1:** Noise filtering
+  _Main file:_ `noise_filter.ipynb`
+- **Task 2:** Implementation of texture histograms
+  _Main file:_ `descriptors.ipynb`  
+- **Task 3:** Painting detection and background removal
   _Main file:_ `background_remover.ipynb`  
-- **Task 5:** Complete pipeline (background removal + retrieval method)  
-  _Main file:_ `task5_evaluation.py`  
-- **Task 6:** Submission files  
-  _Main file:_ `task6.py`
+- **Task 4:** Complete pipeline (background removal + retrieval method)  
+  _Main file:_ `task4_evaluation.py`
+- **Task 5:** Result submission
+  _Main file:_ `task5_evaluation.py`
 
+## Noise filtering
 
-## New Histogram Types
+The notebook includes all the experiments described in the slides to evaluate find the best noise filtering method. Please, run all the notebook cells to reproduce the results.
+Supporting functions are located in: `noise_filter.py`.
 
-The notebook includes all the experiments described in the slides to evaluate the best histogram descriptors using the new types (2D, 3D, block, and pyramid).  
-Supporting functions are located in:  
-`mapk.py`, `similarity_measures_optimized.py`, `week2_histograms.py`, and `new_histogram_helper_functions.py`.
+## Implementation of texture histograms
 
-- Run all the notebook cells to reproduce the results.  
-- The **first execution** may take a long time since it computes the descriptors for the entire BBDD.  
-  These results are **cached** for faster future runs.  
-- The notebook also generates the **QST1-W2 submission** and the **visualizations** used in the slides.
+## Painting detection and background removal
 
-
-## Background Removal System
-
-Given an artwork image, this module generates a mask to remove its background.
+Given an image with at most two artworks, detect them and give the mask to remove the background.
 
 Run `background_remover.ipynb` to see all the processing steps.  
 Core functions are implemented in `background_remover.py`.
 
-Additionally, `visualizer.ipynb` provides an **interactive web interface** to visualize and adjust the background removal process in real time.  
-
-
 ## Complete Pipeline
 
-`task5_evaluation.py` combines the background removal system with the image retrieval method to handle images containing backgrounds.  
+`task4_evaluation.py` combines the background removal system with the image retrieval method to handle images with at most two artworks per image, containing backgrounds.  
 Running this script produces the evaluation metrics for the **development test**.
-
 
 ## Result Submission
 
-`task6.py` contains the functions required to:
+`task5.py` contains the functions required to:
 - Create the **submission masks**.  
 - Generate the **pickle file** for **QST2-W2**.
 
