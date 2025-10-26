@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-def split_images(img, debug=True):
+def split_images(img, debug=False):
     """
     Split an image into two artworks if they are separated horizontally, otherwise return the original.
     
@@ -36,8 +36,6 @@ def split_images(img, debug=True):
     # Step 2: Morphological opening with 10x10 square structure element
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 10))
     opened = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
-    #kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 10))
-    #opened = cv2.morphologyEx(opened, cv2.MORPH_DILATE, kernel)
     
     # Get connected components
     num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(opened, connectivity=8)
