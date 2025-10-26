@@ -42,7 +42,7 @@ def compute_edge_mask(im_lab, gradient_threshold=0.1):
     grad_bin = grad_combined > threshold
 
     mask = binary_opening(grad_bin, structure=np.ones((3, 3)))
-
+ 
     return mask, grad_combined
 
 
@@ -459,12 +459,71 @@ def remove_shadows_and_refine(poly_mask, grad_norm):
     """
     NEARITY = 20
     poly_mask = poly_mask.astype(np.uint8)
-
     h, w = poly_mask.shape
+
+    # Crear una máscara expandida para el filtro
+    poly_mask_expanded = poly_mask.copy()
+
+    # Encontrar los píxeles no-cero de la máscara
+    nonzero_pixels = np.argwhere(poly_mask > 0)
+
+    if len(nonzero_pixels) > 0:
+        # Calcular el bounding box de la máscara
+        min_y, min_x = nonzero_pixels.min(axis=0)
+        max_y, max_x = nonzero_pixels.max(axis=0)
+        
+        # Calcular el centro y dimensiones actuales
+        center_y = (min_y + max_y) / 2
+        center_x = (min_x + max_x) / 2
+        height_mask = max_y - min_y
+        width_mask = max_x - min_x
+        
+        # Intentar zoom del 10%
+        zoom_factor = 1.10
+        new_height = height_mask * zoom_factor
+        new_width = width_mask * zoom_factor
+        
+        # Calcular nuevos límites
+        new_min_y = center_y - new_height / 2
+        new_max_y = center_y + new_height / 2
+        new_min_x = center_x - new_width / 2
+        new_max_x = center_x + new_width / 2
+        
+        # Verificar distancia mínima al borde (10 píxeles)
+        margin = 10
+        
+        # Calcular el zoom máximo permitido para mantener el margen
+        max_zoom_y = min((center_y - margin) / (height_mask / 2), 
+                        (h - center_y - margin) / (height_mask / 2)) if height_mask > 0 else zoom_factor
+        max_zoom_x = min((center_x - margin) / (width_mask / 2), 
+                        (w - center_x - margin) / (width_mask / 2)) if width_mask > 0 else zoom_factor
+        max_zoom = min(max_zoom_y, max_zoom_x)
+        
+        # Ajustar zoom si es necesario
+        if max_zoom < 1.0:
+            # No se puede expandir, usar máscara original
+            zoom_factor = 1.0
+        else:
+            zoom_factor = min(zoom_factor, max_zoom)
+        
+        # Aplicar el zoom final solo si es mayor a 1.0
+        if zoom_factor > 1.0:
+            final_height = height_mask * zoom_factor
+            final_width = width_mask * zoom_factor
+            
+            final_min_y = int(max(0, center_y - final_height / 2))
+            final_max_y = int(min(h, center_y + final_height / 2))
+            final_min_x = int(max(0, center_x - final_width / 2))
+            final_max_x = int(min(w, center_x + final_width / 2))
+            
+            # Crear máscara expandida
+            poly_mask_expanded = np.zeros_like(poly_mask)
+            poly_mask_expanded[final_min_y:final_max_y, final_min_x:final_max_x] = 1
+            poly_mask_expanded = np.where(poly_mask_expanded > 0, poly_mask_expanded, 0).astype(np.uint8)
 
     # Threshold and close gradient, masked by polygon
     grad_norm_thr = np.where(grad_norm > np.max(grad_norm) * 0.1, 255, 0).astype(np.uint8)
-    grad_norm_thr = np.where(poly_mask > 0, grad_norm_thr, 0).astype(np.uint8)
+    grad_norm_thr = np.where(poly_mask_expanded > 0, grad_norm_thr, 0).astype(np.uint8)
     grad_bin = cv2.morphologyEx(grad_norm_thr, cv2.MORPH_CLOSE, np.ones((8, 8), np.uint8))
     grad_bin = (grad_bin > 0).astype(np.uint8)
     grad_bin[grad_bin > 0] = 1
@@ -736,7 +795,7 @@ def remove_shadows_and_refine(poly_mask, grad_norm):
 # -------------------------
 # Public API: main function (signature preserved)
 # -------------------------
-def remove_background_morphological_gradient(im, thr=20, pixel_border=15, gradient_threshold=0.1):
+def remove_background_morphological_gradient(im, thr=20, pixel_border=15, gradient_threshold=0.05):
     """
     Remove background from an image using morphological gradient detection and polygon fitting.
 
@@ -779,7 +838,7 @@ def remove_background_morphological_gradient(im, thr=20, pixel_border=15, gradie
     grad_bin, shadows_candidates_viz, shadows_candidates2_viz, final_mask = remove_shadows_and_refine(poly_mask, grad_norm)
 
     # Final return (keeps original return order)
-    #return ret1, ret2, ret3, ret4, grad_bin, shadows_candidates_viz, shadows_candidates2_viz, final_mask
+    return ret1, ret2, im*final_mask[:, :, np.newaxis], ret4, grad_bin, shadows_candidates_viz, shadows_candidates2_viz, final_mask
 
 
     return ret1, final_mask, im*final_mask[:, :, np.newaxis], None
