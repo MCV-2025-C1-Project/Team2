@@ -27,9 +27,7 @@ This task implements and evaluates several **texture descriptors** for image ret
   - Block-based grids (configurable `grid_x × grid_y`)  
 - **Discrete Cosine Transform (DCT):**  
   - Configurable number of coefficients (best performance found with `128` coefficients)  
-- **Descriptor combinations:**  
-  - LBP + DCT  
-  - LBP + DCT + Color histogram  
+ 
 
 **Experiments included:**
 
