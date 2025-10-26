@@ -658,26 +658,29 @@ def remove_shadows_and_refine(poly_mask, grad_norm):
     # Ensure background cluster exists in shadows_candidates2 before creating C
     bg_exists = find_background_cluster(shadows_candidates2)
     if bg_exists is None:
-        print("[DEBUG] No background cluster found. Creating one via border flooding.")
+        #print("[DEBUG] No background cluster found. Creating one via border flooding.")
         # Use bottom-right corner as seed (most likely to be background)
         seed_r, seed_c = h - 1, w - 1
         
         if zero_mask[seed_r, seed_c]:
-            print(f"[DEBUG] Border seed at ({seed_r}, {seed_c}). Performing flood fill.")
+            #print(f"[DEBUG] Border seed at ({seed_r}, {seed_c}). Performing flood fill.")
             region = segmentation.flood(zero_mask, (seed_r, seed_c), connectivity=1)
             region_size = np.sum(region)
             
             if region_size >= 100:  # Same size threshold
                 if not is_cluster_in_upper_third(region, poly_mask):
                     shadows_candidates2[region] = current_label
-                    print(f"[DEBUG] Background cluster created with label {current_label}, size {region_size}")
+                    #print(f"[DEBUG] Background cluster created with label {current_label}, size {region_size}")
                     current_label += 1
                 else:
-                    print(f"[DEBUG] Border region in upper third. Not creating background cluster.")
+                    pass
+                    #print(f"[DEBUG] Border region in upper third. Not creating background cluster.")
             else:
-                print(f"[DEBUG] Border region too small ({region_size} pixels). Not creating background cluster.")
+                pass
+                #print(f"[DEBUG] Border region too small ({region_size} pixels). Not creating background cluster.")
         else:
-            print("[DEBUG] No valid zero_mask pixel found for background cluster.")
+            pass
+            #print("[DEBUG] No valid zero_mask pixel found for background cluster.")
 
 
     # Algorithm decisions to create final_mask (keeps original branching logic)
@@ -695,17 +698,17 @@ def remove_shadows_and_refine(poly_mask, grad_norm):
     unique_CF = unique_CF[unique_CF > 0]
     num_clusters_CF = len(unique_CF)
 
-    print(f"[DEBUG] num_clusters_C = {num_clusters_C}, labels = {unique_C}")
-    print(f"[DEBUG] num_clusters_CF = {num_clusters_CF}, labels = {unique_CF}")
+    #print(f"[DEBUG] num_clusters_C = {num_clusters_C}, labels = {unique_C}")
+    #print(f"[DEBUG] num_clusters_CF = {num_clusters_CF}, labels = {unique_CF}")
 
     # Default final mask is poly_mask; other cases modify it per original logic
     if bg_cluster_label is None:
-        print("[DEBUG] No background cluster found. Using polygon mask as final mask.")
+        #print("[DEBUG] No background cluster found. Using polygon mask as final mask.")
         final_mask = poly_mask.copy()
 
     else:
         if num_clusters_C == 1:
-            print("[DEBUG] Case: single cluster in C. Using background cluster quadrilateral.")
+            #print("[DEBUG] Case: single cluster in C. Using background cluster quadrilateral.")
             bg_mask = (C == bg_cluster_label).astype(bool)
             candidate_mask = find_max_interior_quadrilateral(bg_mask, poly_mask)
 
@@ -714,55 +717,55 @@ def remove_shadows_and_refine(poly_mask, grad_norm):
             area_candidate = np.sum(candidate_mask)
             ratio = area_candidate / area_original if area_original > 0 else 0
 
-            print(f"[DEBUG] area_original={area_original}, area_candidate={area_candidate}, ratio={ratio:.3f}")
+            #print(f"[DEBUG] area_original={area_original}, area_candidate={area_candidate}, ratio={ratio:.3f}")
 
             if ratio >= 0.7:
-                print("[DEBUG] Candidate mask covers ≥70% of original area. Accepting candidate mask.")
+                #print("[DEBUG] Candidate mask covers ≥70% of original area. Accepting candidate mask.")
                 final_mask = candidate_mask
             else:
-                print("[DEBUG] Candidate mask too small (<70%). Falling back to original polygon mask.")
+                #print("[DEBUG] Candidate mask too small (<70%). Falling back to original polygon mask.")
                 final_mask = poly_mask.copy()
 
         elif num_clusters_C > 1 and num_clusters_CF == 0:
-            print("[DEBUG] Case: multiple clusters in C, none in CF.")
+            #print("[DEBUG] Case: multiple clusters in C, none in CF.")
             all_clusters_mask = combine_cluster_masks(C).astype(bool)
             center = (h // 2, w // 2)
             center_value = C[center[0], center[1]]
-            print(f"[DEBUG] Image center at {center}, label at center: {center_value}")
+            #print(f"[DEBUG] Image center at {center}, label at center: {center_value}")
 
             if center_value > 0:
-                print("[DEBUG] Center lies inside a cluster. Using background cluster mask.")
+                #print("[DEBUG] Center lies inside a cluster. Using background cluster mask.")
                 bg_mask = (C == bg_cluster_label).astype(bool)
                 final_mask = find_max_interior_quadrilateral(bg_mask, poly_mask)
             else:
-                print("[DEBUG] Center not inside any cluster. Testing candidate mask area.")
+                #print("[DEBUG] Center not inside any cluster. Testing candidate mask area.")
                 candidate_mask = find_max_interior_quadrilateral(all_clusters_mask, poly_mask, center)
                 area_original = np.sum(poly_mask)
                 area_candidate = np.sum(candidate_mask)
-                print(f"[DEBUG] area_original={area_original}, area_candidate={area_candidate}, ratio={area_candidate / area_original:.3f}")
+                #print(f"[DEBUG] area_original={area_original}, area_candidate={area_candidate}, ratio={area_candidate / area_original:.3f}")
 
                 if area_candidate >= 0.8 * area_original:
-                    print("[DEBUG] Candidate mask covers ≥80% of original area. Accepting candidate mask.")
+                    #print("[DEBUG] Candidate mask covers ≥80% of original area. Accepting candidate mask.")
                     final_mask = candidate_mask
                 else:
-                    print("[DEBUG] Candidate mask too small. Falling back to background cluster mask.")
+                    #print("[DEBUG] Candidate mask too small. Falling back to background cluster mask.")
                     bg_mask = (C == bg_cluster_label).astype(bool)
                     final_mask = find_max_interior_quadrilateral(bg_mask, poly_mask)
 
         elif num_clusters_CF == 1:
-            print("[DEBUG] Case: single cluster in CF.")
+            #print("[DEBUG] Case: single cluster in CF.")
             cf_label = unique_CF[0]
             cf_mask = (CF == cf_label).astype(bool)
-            print(f"[DEBUG] Using CF cluster label {cf_label} for quadrilateral extraction.")
+            #print(f"[DEBUG] Using CF cluster label {cf_label} for quadrilateral extraction.")
             final_mask = find_max_interior_quadrilateral(cf_mask, poly_mask)
 
         else:
-            print("[DEBUG] Warning: multiple clusters in CF.  Falling back to background cluster mask.")
+            #print("[DEBUG] Warning: multiple clusters in CF.  Falling back to background cluster mask.")
             bg_mask = (C == bg_cluster_label).astype(bool)
             final_mask = find_max_interior_quadrilateral(bg_mask, poly_mask)
 
-    print("[DEBUG] Final mask computation complete.")
-    print(f"[DEBUG] Final mask area = {np.sum(final_mask)}, mask dtype = {final_mask.dtype}")
+    #print("[DEBUG] Final mask computation complete.")
+    #print(f"[DEBUG] Final mask area = {np.sum(final_mask)}, mask dtype = {final_mask.dtype}")
 
 
     # Convert clusters to RGBA visualizations (preserved behavior)
