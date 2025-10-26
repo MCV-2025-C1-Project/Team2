@@ -100,6 +100,17 @@ def extract_descriptors(folder, preprocess=False, multiscale_lbp=True):
 
     return np.array(descriptors), img_names
 
+def extract_descriptor(img, multiscale_lbp=True):
+    img = cv2.imread(img)
+
+    # Compute descriptors
+    lbp_desc = compute_lbp_descriptor(img, multiscale=multiscale_lbp)
+    dct_desc = compute_dct_descriptor(img)
+    combined_desc = np.concatenate([lbp_desc, dct_desc])
+
+    return combined_desc
+
+
 
 # Evaluations
 

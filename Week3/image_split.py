@@ -28,14 +28,14 @@ def split_image_at_valley(image, valleys):
         return (left_artwork, right_artwork)
     return image
 
-def split_images(img):
+def split_images(img, t = 750):
     """Encapsula la lógica de detección y separación de imágenes.
        Devuelve (valleys, imagen_o_tupla)
     """
     gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, col_variances = calculate_variance(gray_img)
     smoothed_col_variances = smooth_variance(col_variances, window_size=200)
-    valleys = find_valleys_in_column_variance(smoothed_col_variances, threshold=750)
+    valleys = find_valleys_in_column_variance(smoothed_col_variances, threshold=t)
 
     if valleys:
         splitted = split_image_at_valley(img, valleys)
