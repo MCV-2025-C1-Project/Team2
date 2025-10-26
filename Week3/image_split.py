@@ -38,7 +38,8 @@ def split_images(img, t = 750):
     valleys = find_valleys_in_column_variance(smoothed_col_variances, threshold=t)
 
     if valleys:
-        splitted = split_image_at_valley(img, valleys)
-        return valleys, splitted
+        splitted_imgs = split_image_at_valley(img, valleys)
+        
+        return valleys, splitted_imgs
     else:
         return valleys, img
