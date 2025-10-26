@@ -1,189 +1,156 @@
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 
-def split_images(img, show_detection=False):
+def split_images(img, debug=True):
     """
-    Detecta si hay uno o dos cuadros en la imagen y los separa usando gradiente morfológico.
+    Split an image into two artworks if they are separated horizontally, otherwise return the original.
     
     Args:
-        img: imagen BGR de OpenCV
-        show_detection: si True, muestra el proceso de detección de bordes
-        
+        img: Input image (BGR format)
+        debug: If True, display the morphological gradient after opening
+    
     Returns:
-        - Si hay 2 cuadros: tupla (left_artwork, right_artwork)
-        - Si hay 1 cuadro: imagen completa
+        tuple: (success_flag, result)
+            - If split: (True, (left_image, right_image))
+            - If not split: (False, original_image)
     """
-    # Convertir a escala de grises
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # Step 1: Compute morphological gradient of S and V components
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    s_channel = hsv[:, :, 1]
+    v_channel = hsv[:, :, 2]
     
-    # Aplicar desenfoque para reducir ruido
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+    # Compute morphological gradients
+    kernel_grad = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
     
-    # GRADIENTE MORFOLÓGICO en lugar de Canny
-    # El gradiente morfológico = dilatación - erosión
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-    dilated = cv2.dilate(blurred, kernel, iterations=1)
-    eroded = cv2.erode(blurred, kernel, iterations=1)
-    morph_gradient = cv2.subtract(dilated, eroded)
+    grad_s = cv2.morphologyEx(s_channel, cv2.MORPH_GRADIENT, kernel_grad)
+    grad_v = cv2.morphologyEx(v_channel, cv2.MORPH_GRADIENT, kernel_grad)
     
-    # Binarizar el gradiente morfológico
-    _, binary = cv2.threshold(morph_gradient, 30, 255, cv2.THRESH_BINARY)
+    # Combine gradients
+    gradient_magnitude = cv2.add(grad_s, grad_v)
     
-    # Dilatar para conectar bordes cercanos
-    kernel_connect = np.ones((7, 7), np.uint8)
-    connected = cv2.dilate(binary, kernel_connect, iterations=2)
+    # Threshold: Remove gradient values below 10% of max, set rest to 1 (binary mask)
+    max_value = gradient_magnitude.max()
+    threshold_value = 0.1 * max_value
+    binary = np.where(gradient_magnitude >= threshold_value, 1, 0).astype(np.uint8)
     
-    # Visualizar detección de bordes si se solicita
-    if show_detection:
-        plt.figure(figsize=(15, 5))
+    # Step 2: Morphological opening with 10x10 square structure element
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 10))
+    opened = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
+    #kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 10))
+    #opened = cv2.morphologyEx(opened, cv2.MORPH_DILATE, kernel)
+    
+    # Get connected components
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(opened, connectivity=8)
+    
+    # Sort components by area (excluding background which is label 0)
+    if num_labels < 3:  # Less than 2 components (background + 1 component)
+        return False, img
+    
+    # Get areas and sort (excluding background at index 0)
+    areas = [(i, stats[i, cv2.CC_STAT_AREA]) for i in range(1, num_labels)]
+    areas.sort(key=lambda x: x[1], reverse=True)
+    
+    if len(areas) < 2:
+        return False, img
+    
+    # Get the two largest components
+    label1, area1 = areas[0]
+    label2, area2 = areas[1]
+    
+    # Filter to keep only the two largest components
+    filtered_mask = np.zeros_like(opened)
+    filtered_mask[labels == label1] = 1
+    filtered_mask[labels == label2] = 1
+    
+    # Get bounding boxes
+    x1, y1, w1, h1 = stats[label1, cv2.CC_STAT_LEFT:cv2.CC_STAT_LEFT+4]
+    x2, y2, w2, h2 = stats[label2, cv2.CC_STAT_LEFT:cv2.CC_STAT_LEFT+4]
+    
+    # Debug: Display morphological gradient after opening and filtering
+    if debug:
+        import matplotlib.pyplot as plt
+        print(f"Max gradient value: {max_value}")
+        print(f"Threshold (10% of max): {threshold_value}")
+        print(f"Number of connected components (including background): {num_labels}")
+        print(f"Number of foreground components: {num_labels - 1}")
+        print(f"Component 1 - Area: {area1}, BBox: x={x1}, y={y1}, w={w1}, h={h1}")
+        print(f"Component 2 - Area: {area2}, BBox: x={x2}, y={y2}, w={w2}, h={h2}")
         
+        plt.figure(figsize=(20, 5))
         plt.subplot(1, 4, 1)
-        plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-        plt.title('Original')
-        plt.axis('off')
-        
-        plt.subplot(1, 4, 2)
-        plt.imshow(blurred, cmap='gray')
-        plt.title('Blurred')
-        plt.axis('off')
-        
-        plt.subplot(1, 4, 3)
-        plt.imshow(morph_gradient, cmap='gray')
+        plt.imshow(gradient_magnitude, cmap='gray')
         plt.title('Morphological Gradient')
         plt.axis('off')
-        
-        plt.subplot(1, 4, 4)
-        plt.imshow(connected, cmap='gray')
-        plt.title('Binary + Dilated')
+        plt.subplot(1, 4, 2)
+        plt.imshow(binary, cmap='gray')
+        plt.title('After Threshold (10%)')
         plt.axis('off')
-        
+        plt.subplot(1, 4, 3)
+        plt.imshow(opened, cmap='gray')
+        plt.title('After Opening (10x10)')
+        plt.axis('off')
+        plt.subplot(1, 4, 4)
+        plt.imshow(filtered_mask, cmap='gray')
+        plt.title('Two Largest Components')
+        plt.axis('off')
         plt.tight_layout()
         plt.show()
     
-    # Encontrar contornos
-    contours, _ = cv2.findContours(dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # Step 3: Check if rectangles are horizontally separated
+    # One must be completely to the left of the other
+    rect1 = (x1, x1 + w1)  # (left, right) edges
+    rect2 = (x2, x2 + w2)
     
-    # Dibujar contornos detectados en una copia de la imagen
-    if show_detection:
-        img_with_contours = img.copy()
-        cv2.drawContours(img_with_contours, contours, -1, (0, 255, 0), 3)
-        
-        plt.figure(figsize=(10, 6))
-        plt.imshow(cv2.cvtColor(img_with_contours, cv2.COLOR_BGR2RGB))
-        plt.title(f'Contornos Detectados: {len(contours)} total')
-        plt.axis('off')
-        plt.show()
+    # Check if they are horizontally separated (no horizontal overlap)
+    horizontally_separated = (rect1[1] < rect2[0]) or (rect2[1] < rect1[0])
     
-    # Filtrar contornos por área (ignorar contornos muy pequeños)
-    img_area = img.shape[0] * img.shape[1]
-    min_area = img_area * 0.05  # Al menos 5% del área total
+    if not horizontally_separated:
+        # Rectangles are NOT horizontally separated, don't split
+        if debug:
+            print("Rectangles are NOT horizontally separated - NOT splitting")
+        return False, img
     
-    valid_contours = []
-    for cnt in contours:
-        area = cv2.contourArea(cnt)
-        if area > min_area:
-            x, y, w, h = cv2.boundingRect(cnt)
-            aspect_ratio = w / h if h > 0 else 0
-            # Filtrar por relación de aspecto razonable (no demasiado estrecho)
-            if 0.2 < aspect_ratio < 5.0:
-                valid_contours.append((x, y, w, h, area))
+    # Step 4: Rectangles are horizontally separated, split by middle distance
+    # Determine which rectangle is on the left
+    if x1 < x2:
+        left_x, left_w = x1, w1
+        right_x = x2
+    else:
+        left_x, left_w = x2, w2
+        right_x = x1
     
-    # Ordenar por posición horizontal (izquierda a derecha)
-    valid_contours.sort(key=lambda c: c[0])
+    # Calculate split position (middle distance between rectangles)
+    left_edge = left_x + left_w  # right edge of left rectangle
+    right_edge = right_x  # left edge of right rectangle
+    split_x = (left_edge + right_edge) // 2
     
-    # Visualizar contornos válidos
-    if show_detection and len(valid_contours) > 0:
-        img_valid_contours = img.copy()
-        for i, (x, y, w, h, area) in enumerate(valid_contours):
-            cv2.rectangle(img_valid_contours, (x, y), (x+w, y+h), (255, 0, 0), 3)
-            cv2.putText(img_valid_contours, f'#{i+1}', (x+10, y+30), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
-        
-        plt.figure(figsize=(12, 6))
-        plt.imshow(cv2.cvtColor(img_valid_contours, cv2.COLOR_BGR2RGB))
-        plt.title(f'Contornos Válidos: {len(valid_contours)}')
-        plt.axis('off')
-        plt.show()
+    if debug:
+        print(f"Rectangles ARE horizontally separated - SPLITTING at x={split_x}")
+        print(f"Left edge: {left_edge}, Right edge: {right_edge}")
     
-    # Si hay 2 o más contornos válidos, intentar separar
-    if len(valid_contours) >= 2:
-        # Tomar los dos contornos más grandes
-        sorted_by_area = sorted(valid_contours, key=lambda c: c[4], reverse=True)
-        top_two = sorted_by_area[:2]
-        
-        # Ordenar por posición horizontal
-        top_two.sort(key=lambda c: c[0])
-        
-        x1, y1, w1, h1, _ = top_two[0]
-        x2, y2, w2, h2, _ = top_two[1]
-        
-        # Verificar que están suficientemente separados horizontalmente
-        separation = x2 - (x1 + w1)
-        
-        if separation > 20:  # Al menos 20 píxeles de separación
-            # Añadir un pequeño margen
-            margin = 10
-            
-            # Extraer imagen izquierda
-            x1_start = max(0, x1 - margin)
-            x1_end = min(img.shape[1], x1 + w1 + margin)
-            y1_start = max(0, y1 - margin)
-            y1_end = min(img.shape[0], y1 + h1 + margin)
-            left_artwork = img[y1_start:y1_end, x1_start:x1_end]
-            
-            # Extraer imagen derecha
-            x2_start = max(0, x2 - margin)
-            x2_end = min(img.shape[1], x2 + w2 + margin)
-            y2_start = max(0, y2 - margin)
-            y2_end = min(img.shape[0], y2 + h2 + margin)
-            right_artwork = img[y2_start:y2_end, x2_start:x2_end]
-            
-            return (left_artwork, right_artwork)
+    # Split the image
+    left_image = img[:, :split_x].copy()
+    right_image = img[:, split_x:].copy()
     
-    # Si no se detectaron 2 cuadros separados, devolver la imagen completa
-    return img
-
-
-def split_images_simple(img, threshold=0.4):
-    """
-    Método alternativo más simple: divide la imagen verticalmente si detecta
-    dos regiones con contenido significativo.
+    # Step 5: Verify split validity - check if either image is too small
+    original_width = img.shape[1]
+    left_width = left_image.shape[1]
+    right_width = right_image.shape[1]
     
-    Args:
-        img: imagen BGR de OpenCV
-        threshold: umbral para detectar contenido (0-1)
-        
-    Returns:
-        - Si hay 2 cuadros: tupla (left_artwork, right_artwork)
-        - Si hay 1 cuadro: imagen completa
-    """
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    min_width_threshold = 0.25 * original_width
     
-    # Calcular la suma vertical de intensidad (proyección vertical)
-    vertical_projection = np.sum(gray, axis=0)
+    if left_width < min_width_threshold or right_width < min_width_threshold:
+        if debug:
+            print(f"Split rejected: One image is too small")
+            print(f"Original width: {original_width}")
+            print(f"Left width: {left_width} ({100*left_width/original_width:.1f}%)")
+            print(f"Right width: {right_width} ({100*right_width/original_width:.1f}%)")
+            print(f"Minimum threshold: {min_width_threshold:.1f} (25%)")
+        return False, img
     
-    # Normalizar
-    vertical_projection = vertical_projection / np.max(vertical_projection)
+    if debug:
+        print(f"Split accepted: Both images are large enough")
+        print(f"Left width: {left_width} ({100*left_width/original_width:.1f}%)")
+        print(f"Right width: {right_width} ({100*right_width/original_width:.1f}%)")
     
-    # Encontrar el centro de la imagen
-    center = img.shape[1] // 2
-    search_range = img.shape[1] // 4
-    
-    # Buscar el mínimo alrededor del centro (posible separación)
-    left_bound = max(0, center - search_range)
-    right_bound = min(img.shape[1], center + search_range)
-    
-    min_pos = left_bound + np.argmin(vertical_projection[left_bound:right_bound])
-    min_value = vertical_projection[min_pos]
-    
-    # Si hay un valle significativo, dividir
-    if min_value < threshold:
-        left_artwork = img[:, :min_pos]
-        right_artwork = img[:, min_pos:]
-        
-        # Verificar que ambas partes tengan tamaño razonable
-        if left_artwork.shape[1] > img.shape[1] * 0.2 and right_artwork.shape[1] > img.shape[1] * 0.2:
-            return (left_artwork, right_artwork)
-    
-    return img
+    return True, (left_image, right_image)
