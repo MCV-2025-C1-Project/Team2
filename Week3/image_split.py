@@ -15,7 +15,7 @@ def split_images(img, debug=False):
             - If not split: (False, original_image)
     """
     # Step 1: Compute morphological gradient of S and V components
-    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
     s_channel = hsv[:, :, 1]
     v_channel = hsv[:, :, 2]
     
