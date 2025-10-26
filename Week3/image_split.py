@@ -62,7 +62,7 @@ def split_images(img, show_detection=False):
         plt.show()
     
     # Encontrar contornos
-    contours, _ = cv2.findContours(connected, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv2.findContours(dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
     # Dibujar contornos detectados en una copia de la imagen
     if show_detection:
@@ -142,4 +142,48 @@ def split_images(img, show_detection=False):
             return (left_artwork, right_artwork)
     
     # Si no se detectaron 2 cuadros separados, devolver la imagen completa
+    return img
+
+
+def split_images_simple(img, threshold=0.4):
+    """
+    Método alternativo más simple: divide la imagen verticalmente si detecta
+    dos regiones con contenido significativo.
+    
+    Args:
+        img: imagen BGR de OpenCV
+        threshold: umbral para detectar contenido (0-1)
+        
+    Returns:
+        - Si hay 2 cuadros: tupla (left_artwork, right_artwork)
+        - Si hay 1 cuadro: imagen completa
+    """
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    
+    # Calcular la suma vertical de intensidad (proyección vertical)
+    vertical_projection = np.sum(gray, axis=0)
+    
+    # Normalizar
+    vertical_projection = vertical_projection / np.max(vertical_projection)
+    
+    # Encontrar el centro de la imagen
+    center = img.shape[1] // 2
+    search_range = img.shape[1] // 4
+    
+    # Buscar el mínimo alrededor del centro (posible separación)
+    left_bound = max(0, center - search_range)
+    right_bound = min(img.shape[1], center + search_range)
+    
+    min_pos = left_bound + np.argmin(vertical_projection[left_bound:right_bound])
+    min_value = vertical_projection[min_pos]
+    
+    # Si hay un valle significativo, dividir
+    if min_value < threshold:
+        left_artwork = img[:, :min_pos]
+        right_artwork = img[:, min_pos:]
+        
+        # Verificar que ambas partes tengan tamaño razonable
+        if left_artwork.shape[1] > img.shape[1] * 0.2 and right_artwork.shape[1] > img.shape[1] * 0.2:
+            return (left_artwork, right_artwork)
+    
     return img
