@@ -838,7 +838,7 @@ def remove_background_morphological_gradient(im, thr=20, pixel_border=15, gradie
     grad_bin, shadows_candidates_viz, shadows_candidates2_viz, final_mask = remove_shadows_and_refine(poly_mask, grad_norm)
 
     # Final return (keeps original return order)
-    return ret1, ret2, im*final_mask[:, :, np.newaxis], ret4, grad_bin, shadows_candidates_viz, shadows_candidates2_viz, final_mask
+    #return ret1, ret2, im*final_mask[:, :, np.newaxis], ret4, grad_bin, shadows_candidates_viz, shadows_candidates2_viz, final_mask
 
 
     return ret1, final_mask, im*final_mask[:, :, np.newaxis], None
