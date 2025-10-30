@@ -2,7 +2,7 @@
 Detects keypoints in all images from a given folder and saves them as .npy files.
 
 Usage:
-    python keypoints.py --input datasets/museum --output results/keypoints/museum --method HARRIS
+    python keypoints.py --input Data/BBDD --output results/keypoints/BBDD --method HARRIS
 """
 
 import cv2
