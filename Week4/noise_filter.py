@@ -141,8 +141,8 @@ def preprocess_image(img, show_examples=False):
 
     if noise_score > THRESHOLD:
         denoised_img = remove_noise_median(img, ksize=3)
-        #denoised_img = remove_noise_nlmeans(denoised_img, h=5, templateWindowSize=3, searchWindowSize=21)
-        denoised_img = remove_noise_bilateral(denoised_img, d=21, sigmaColor=25, sigmaSpace=50)
+        denoised_img = remove_noise_nlmeans(denoised_img, h=5, templateWindowSize=3, searchWindowSize=21)
+        #denoised_img = remove_noise_bilateral(denoised_img, d=21, sigmaColor=25, sigmaSpace=50)
 
         if show_examples:
             fig, axes = plt.subplots(1, 2, figsize=(10,5))
