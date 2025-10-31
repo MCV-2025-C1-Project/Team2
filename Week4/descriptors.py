@@ -69,6 +69,17 @@ def compute_descriptors(images, keypoints_list, extractor):
         all_descriptors.append(desc)
     return updated_keypoints, all_descriptors
 
+def compute_descriptor(image, keypoints_list, extractor):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
+    if keypoints_list is None:
+        # If no precomputed keypoints, detect automatically
+        kp, desc = extractor.detectAndCompute(gray, None)
+    else:
+        kp, desc = extractor.compute(gray, kp)
+
+    return kp, desc
+
 
 def save_descriptors(filenames, keypoints, descriptors, out_dir):
     os.makedirs(out_dir, exist_ok=True)
