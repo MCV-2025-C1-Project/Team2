@@ -22,3 +22,6 @@ Week3/outputs2/
 Week3/background_removal_exp/REMOVE.ipynb
 Week3/denoised_images
 Week3/background_removal_exp
+Week4/results
+Week4/cache/
+Week4/__pycache__/
