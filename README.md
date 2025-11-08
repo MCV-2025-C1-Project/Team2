@@ -116,6 +116,41 @@ The work includes:
 
 ---
 
+## Week 3 – Texture Descriptors and Multi-painting Detection
+
+This week introduced **texture-based image descriptors** and an improved **background removal pipeline** to handle images containing one or two paintings.
+
+The main contributions were:
+- Implementation of **Local Binary Patterns (LBP)** and **Discrete Cosine Transform (DCT)** descriptors, with analyses of:
+  - Multi-scale vs. single-scale LBP  
+  - Number of DCT coefficients  
+  - Combination of LBP + DCT  
+- Comparison of color spaces (RGB, HSV, CIELAB) for texture extraction.  
+- Integration of **denoising preprocessing** to improve descriptor stability.  
+- Development of an automatic **painting segmentation** module capable of detecting multiple artworks per query image.
+
+These components were merged into a unified **retrieval pipeline** combining color, texture, and structure cues.
+
+> For detailed usage and experiments, see **Week3/README.md**.
+
+---
+
+## Week 4 – Keypoint Descriptors and Unknown Detection
+
+The final week focused on **local feature-based retrieval** using keypoint descriptors and methods to improve robustness.
+
+Key elements included:
+- Implementation and evaluation of **SIFT**, **ORB** and **COLOR-SIFT** descriptors for database-query matching.  
+- Development of a **matching-score normalization** method based on the number of detected keypoints, improving discriminability between known and unknown queries.  
+- Threshold optimization using **F1-score maximization** to classify queries as *known* or *unknown*.  
+- Comprehensive visualization tools for keypoints, matches, and retrieval results.
+
+These improvements completed the CBIR system by combining **global descriptors** (histograms, textures) and **local descriptors** (SIFT/ORB) for more accurate retrieval and recognition of artworks.
+
+> For detailed implementation and results, see **Week4/** notebooks and scripts.
+
+---
+
 ## Team Members
 
 **Team 2 – MCV 2025 C1 Project**
