@@ -1,4 +1,4 @@
-# Week 2 - Usage
+# Week 3 - Usage
 
 This week’s tasks are organized into four main groups, each corresponding to a primary file:
 
