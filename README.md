@@ -151,6 +151,21 @@ These improvements completed the CBIR system by combining **global descriptors**
 
 ---
 
+## Final Presentation
+
+You can access the final presentation of our project here:
+
+📄 [C1 MCV Project Presentation – Team 2](./C1%20MCV%20PROJECT%20PRESENTATION.pdf)
+
+This presentation summarizes the entire workflow, including:
+- Pipeline overview and motivation  
+- Noise removal, split detection, and background removal  
+- Comparison of descriptors (SIFT, ORB, Color-SIFT)  
+- Matching, scoring, and unknown detection results  
+- Final evaluation metrics and qualitative examples
+
+---
+
 ## Team Members
 
 **Team 2 – MCV 2025 C1 Project**
